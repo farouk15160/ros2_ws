@@ -1,0 +1,37 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="default">
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <!-- 
+      This is the crucial part. We are making the physics simulation
+      more stable and precise to prevent drifting with high-gain controllers.
+    -->
+    <physics type="ode">
+      <max_step_size>0.001</max_step_size> <!-- Keep the default step size -->
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+      <ode>
+        <solver>
+          <!-- More iterations make the solver more accurate and stable -->
+          <iters>200</iters> 
+          <sor>1.3</sor>
+          <use_world_step>true</use_world_step>
+        </solver>
+        <constraints>
+          <cfm>0.0</cfm>
+          <erp>0.2</erp>
+          <contact_max_correcting_vel>100</contact_max_correcting_vel>
+          <contact_surface_layer>0.001</contact_surface_layer>
+        </constraints>
+      </ode>
+    </physics>
+    
+  </world>
+</sdf>
+

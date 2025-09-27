@@ -1,0 +1,7 @@
+ ros2 topic pub --once /joint_targets sensor_msgs/msg/JointState "{
+    header: {stamp: {sec: 0, nanosec: 0}, frame_id: ''},
+    name: ['joint_1', 'joint_2', 'joint_3', 'joint_4', 'joint_5', 'gripper'],
+    position: [1.17, 1.17, 2.27, 1.57, 1.17, 1.1],
+    velocity: [],
+    effort: []
+}"
