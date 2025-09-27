@@ -1,0 +1,10 @@
+Metadata-Version: 1.2
+Name: robot-arm-bridge
+Version: 0.0.1
+Summary: ROS2 bridge for the ESP32 robot arm.
+Home-page: UNKNOWN
+Maintainer: farouk
+Maintainer-email: farouk@todo.todo
+License: TODO: License declaration
+Description: UNKNOWN
+Platform: UNKNOWN

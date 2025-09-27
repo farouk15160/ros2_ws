@@ -1,7 +1,114 @@
- ros2 topic pub --once /joint_targets sensor_msgs/msg/JointState "{
-    header: {stamp: {sec: 0, nanosec: 0}, frame_id: ''},
-    name: ['joint_1', 'joint_2', 'joint_3', 'joint_4', 'joint_5', 'gripper'],
-    position: [1.17, 1.17, 2.27, 1.57, 1.17, 1.1],
-    velocity: [],
-    effort: []
+ROS2 Robot Arm Bridge: Topics & Payloads Guide
+This document provides a comprehensive reference for all the ROS2 topics used to communicate with the ESP32-based robot arm.
+
+Subscribed Topics (Commands from PC to Robot)
+These topics are used to send commands from your computer to the robot arm.
+
+1. Move All Joints: /joint_targets
+Purpose: Set the target position for multiple joints simultaneously. This is the primary topic for controlling the arm's pose.
+
+Message Type: sensor_msgs/msg/JointState
+
+Payload Notes:
+
+The position array expects angles in radians.
+
+You can provide a 5-element array (where the first element controls both base motors) or a full 6-element array.
+
+Example Command (5-element):
+
+ros2 topic pub --once /joint_targets sensor_msgs/msg/JointState "{
+    name: ['base', 'joint_3', 'joint_4', 'joint_5', 'gripper'],
+    position: [1.57, 1.0, 1.0, 1.2, 0.5]
 }"
+
+2. Control the Gripper: /gripper_command
+Purpose: Command the gripper to open or close, with current-based object detection.
+
+Message Type: std_msgs/msg/Float32MultiArray
+
+Payload Notes:
+
+The data array must contain exactly two elements.
+
+data[0]: Target angle in degrees (e.g., 90.0 for closed, 20.0 for open).
+
+data[1]: Current threshold in milliamps (mA). The gripper will stop if it exceeds this current, indicating it's holding an object.
+
+Example Command (Close gripper):
+
+ros2 topic pub --once /gripper_command std_msgs/msg/Float32MultiArray "{data: [90.0, 250.0]}"
+
+3. Set Movement Speed: /set_speed_factor
+Purpose: Dynamically change the speed of the robot's movements.
+
+Message Type: std_msgs/msg/Float32
+
+Payload Notes:
+
+The data value represents the speed factor in ms/degree.
+
+Lower values result in faster movements (e.g., 20.0).
+
+Higher values result in slower, smoother movements (e.g., 150.0).
+
+Example Command (Set a fast speed):
+
+ros2 topic pub --once /set_speed_factor std_msgs/msg/Float32 "{data: 20.0}"
+
+Published Topics (Status from Robot to PC)
+These topics broadcast real-time status information from the robot arm to your computer. Use ros2 topic echo <topic_name> to view them.
+
+1. Current Joint Angles: /joint_states
+Purpose: Provides a continuous stream of the robot's current joint angles. Essential for feedback and state awareness.
+
+Message Type: sensor_msgs/msg/JointState
+
+Payload Notes:
+
+The position array reports the angle of all 6 joints in radians.
+
+Example Command to View:
+
+ros2 topic echo /joint_states
+
+2. Main Power Current: /main_current
+Purpose: Reports the total current being drawn by all arm motors. Useful for detecting stalls or overall power consumption.
+
+Message Type: std_msgs/msg/Float32
+
+Payload Notes:
+
+The data value is the current in Amps (A).
+
+Example Command to View:
+
+ros2 topic echo /main_current
+
+3. Gripper Current: /gripper_current
+Purpose: Reports the isolated current being drawn by the gripper servo.
+
+Message Type: std_msgs/msg/Float32
+
+Payload Notes:
+
+The data value is the current in milliamps (mA).
+
+Example Command to View:
+
+ros2 topic echo /gripper_current
+
+4. Emergency Stop Status: /emergency_stop
+Purpose: Publishes a status update when an emergency stop is triggered (e.g., by the main current threshold or a communication timeout).
+
+Message Type: std_msgs/msg/Bool
+
+Payload Notes:
+
+data: true means an E-Stop is active.
+
+data: false means the system is operating normally.
+
+Example Command to View:
+
+ros2 topic echo /emergency_stop
