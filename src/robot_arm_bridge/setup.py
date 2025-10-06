@@ -26,6 +26,7 @@ setup(
         'console_scripts': [
             # Entry point for the hardware bridge
             'serial_bridge = robot_arm_bridge.serial_bridge_node:main',
+            'web_gui = robot_arm_bridge.web_gui_node:main',
             # Entry point for the Gazebo mirror
             'gazebo_mirror = robot_arm_bridge.gazebo_mirror_node:main',
         ],

@@ -1,7 +1,9 @@
 /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge/serial_bridge_node.py
+/home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge/web_gui_node.py
 /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge/gazebo_mirror_node.py
 /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge/__init__.py
 /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge/__pycache__/serial_bridge_node.cpython-38.pyc
+/home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge/__pycache__/web_gui_node.cpython-38.pyc
 /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge/__pycache__/gazebo_mirror_node.cpython-38.pyc
 /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge/__pycache__/__init__.cpython-38.pyc
 /home/farouk/ros2_ws/install/robot_arm_bridge/share/ament_index/resource_index/packages/robot_arm_bridge
@@ -16,3 +18,4 @@
 /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge-0.0.1-py3.8.egg-info/entry_points.txt
 /home/farouk/ros2_ws/install/robot_arm_bridge/lib/robot_arm_bridge/gazebo_mirror
 /home/farouk/ros2_ws/install/robot_arm_bridge/lib/robot_arm_bridge/serial_bridge
+/home/farouk/ros2_ws/install/robot_arm_bridge/lib/robot_arm_bridge/web_gui

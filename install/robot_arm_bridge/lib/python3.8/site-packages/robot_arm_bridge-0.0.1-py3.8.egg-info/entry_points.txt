@@ -1,4 +1,5 @@
 [console_scripts]
 gazebo_mirror = robot_arm_bridge.gazebo_mirror_node:main
 serial_bridge = robot_arm_bridge.serial_bridge_node:main
+web_gui = robot_arm_bridge.web_gui_node:main
 

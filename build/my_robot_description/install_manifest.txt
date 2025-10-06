@@ -9,6 +9,7 @@
 /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/meshes/link_2_elbow.stl
 /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/meshes/base.stl
 /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/config/my_robot_arm_controllers.yaml
+/home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/worlds/my_robot.world
 /home/farouk/ros2_ws/install/my_robot_description/share/ament_index/resource_index/package_run_dependencies/my_robot_description
 /home/farouk/ros2_ws/install/my_robot_description/share/ament_index/resource_index/parent_prefix_path/my_robot_description
 /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/environment/ament_prefix_path.sh

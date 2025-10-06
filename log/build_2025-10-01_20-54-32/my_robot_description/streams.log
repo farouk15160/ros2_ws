@@ -1,0 +1,142 @@
+[0.029s] Invoking command in '/home/farouk/ros2_ws/build/my_robot_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/farouk/ros2_ws/install/robot_arm_bridge:/opt/ros/foxy /usr/local/bin/cmake /home/farouk/ros2_ws/src/my_robot_description -DCMAKE_INSTALL_PREFIX=/home/farouk/ros2_ws/install/my_robot_description
+[0.134s] -- The C compiler identification is GNU 9.4.0
+[0.265s] -- The CXX compiler identification is GNU 9.4.0
+[0.284s] -- Detecting C compiler ABI info
+[0.383s] -- Detecting C compiler ABI info - done
+[0.403s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.404s] -- Detecting C compile features
+[0.405s] -- Detecting C compile features - done
+[0.412s] -- Detecting CXX compiler ABI info
+[0.529s] -- Detecting CXX compiler ABI info - done
+[0.550s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.550s] -- Detecting CXX compile features
+[0.551s] -- Detecting CXX compile features - done
+[0.555s] -- Found ament_cmake: 0.9.12 (/opt/ros/foxy/share/ament_cmake/cmake)
+[0.602s] -- Found PythonInterp: /usr/bin/python3 (found suitable version "3.8.10", minimum required is "3") 
+[0.603s] -- Using PYTHON_EXECUTABLE: /usr/bin/python3
+[1.041s] -- Found rosidl_default_generators: 1.0.1 (/opt/ros/foxy/share/rosidl_default_generators/cmake)
+[1.046s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[1.057s] -- Found rosidl_adapter: 1.3.1 (/opt/ros/foxy/share/rosidl_adapter/cmake)
+[1.254s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "1.1.1f")  
+[1.326s] -- Found FastRTPS: /opt/ros/foxy/include  
+[1.493s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[1.540s] -- Found gazebo_ros: 3.5.3 (/opt/ros/foxy/share/gazebo_ros/cmake)
+[1.656s] -- Found rmw_implementation_cmake: 1.0.4 (/opt/ros/foxy/share/rmw_implementation_cmake/cmake)
+[1.658s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[1.662s] -- Looking for pthread.h
+[1.781s] -- Looking for pthread.h - found
+[1.782s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+[1.899s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+[1.900s] -- Looking for pthread_create in pthreads
+[1.974s] -- Looking for pthread_create in pthreads - not found
+[1.974s] -- Looking for pthread_create in pthread
+[2.080s] -- Looking for pthread_create in pthread - found
+[2.084s] -- Found Threads: TRUE  
+[2.331s] -- Found PkgConfig: /usr/bin/pkg-config (found version "0.29.1") 
+[2.333s] -- Checking for module 'bullet>=2.82'
+[2.353s] --   Found bullet, version 2.88
+[2.580s] -- Found ccd: /usr/include (found suitable version "2.0", minimum required is "2.0") 
+[2.723s] -- Found fcl: /usr/include (found suitable version "0.5.0", minimum required is "0.3.2") 
+[2.836s] -- Found assimp: /usr/include (found version "5.0.0") 
+[2.882s] -- Found DART: /usr/include (Required is at least version "6.6") found components: dart 
+[2.945s] -- Found Boost: /usr/lib/x86_64-linux-gnu/cmake/Boost-1.71.0/BoostConfig.cmake (found suitable version "1.71.0", minimum required is "1.40.0") found components: thread system filesystem program_options regex iostreams date_time 
+[2.990s] -- Found Protobuf: /usr/lib/x86_64-linux-gnu/libprotobuf.so;-lpthread (found version "3.6.1") 
+[2.998s] -- Looking for ignition-math6 -- found version 6.15.1
+[3.009s] -- Searching for dependencies of ignition-math6
+[3.013s] -- Looking for OGRE...
+[3.013s] -- OGRE_PREFIX_WATCH changed.
+[3.022s] -- Checking for module 'OGRE'
+[3.051s] --   Found OGRE, version 1.9.0
+[3.132s] -- Found Ogre Ghadamon (1.9.0)
+[3.154s] -- Found OGRE: optimized;/usr/lib/x86_64-linux-gnu/libOgreMain.so;debug;/usr/lib/x86_64-linux-gnu/libOgreMain.so
+[3.176s] -- Looking for OGRE_Paging...
+[3.202s] -- Found OGRE_Paging: optimized;/usr/lib/x86_64-linux-gnu/libOgrePaging.so;debug;/usr/lib/x86_64-linux-gnu/libOgrePaging.so
+[3.202s] -- Looking for OGRE_Terrain...
+[3.225s] -- Found OGRE_Terrain: optimized;/usr/lib/x86_64-linux-gnu/libOgreTerrain.so;debug;/usr/lib/x86_64-linux-gnu/libOgreTerrain.so
+[3.226s] -- Looking for OGRE_Property...
+[3.250s] -- Found OGRE_Property: optimized;/usr/lib/x86_64-linux-gnu/libOgreProperty.so;debug;/usr/lib/x86_64-linux-gnu/libOgreProperty.so
+[3.251s] -- Looking for OGRE_RTShaderSystem...
+[3.275s] -- Found OGRE_RTShaderSystem: optimized;/usr/lib/x86_64-linux-gnu/libOgreRTShaderSystem.so;debug;/usr/lib/x86_64-linux-gnu/libOgreRTShaderSystem.so
+[3.275s] -- Looking for OGRE_Volume...
+[3.297s] -- Found OGRE_Volume: optimized;/usr/lib/x86_64-linux-gnu/libOgreVolume.so;debug;/usr/lib/x86_64-linux-gnu/libOgreVolume.so
+[3.297s] -- Looking for OGRE_Overlay...
+[3.318s] -- Found OGRE_Overlay: optimized;/usr/lib/x86_64-linux-gnu/libOgreOverlay.so;debug;/usr/lib/x86_64-linux-gnu/libOgreOverlay.so
+[3.785s] -- Looking for ignition-math6 -- found version 6.15.1
+[3.789s] -- Looking for ignition-transport8 -- found version 8.5.1
+[3.790s] -- Searching for dependencies of ignition-transport8
+[3.859s] -- Config-file not installed for ZeroMQ -- checking for pkg-config
+[3.880s] -- Checking for module 'libzmq >= 4'
+[3.967s] --   Found libzmq , version 4.3.2
+[4.145s] -- Found ZeroMQ: TRUE (Required is at least version "4") 
+[4.165s] -- Checking for module 'uuid'
+[4.215s] --   Found uuid, version 2.34.0
+[4.333s] -- Found UUID: TRUE  
+[4.337s] -- Looking for ignition-msgs5 -- found version 5.11.1
+[4.338s] -- Searching for dependencies of ignition-msgs5
+[4.402s] -- Looking for ignition-math6 -- found version 6.15.1
+[4.411s] -- Checking for module 'tinyxml2'
+[4.449s] --   Found tinyxml2, version 6.2.0
+[4.617s] -- Looking for ignition-msgs5 -- found version 5.11.1
+[4.621s] -- Looking for ignition-common3 -- found version 3.17.1
+[4.622s] -- Searching for dependencies of ignition-common3
+[4.622s] -- Looking for dlfcn.h - found
+[4.625s] -- Looking for libdl - found
+[4.628s] -- Found DL: TRUE  
+[4.646s] -- Searching for <ignition-common3> component [graphics]
+[4.649s] -- Looking for ignition-common3-graphics -- found version 3.17.1
+[4.650s] -- Searching for dependencies of ignition-common3-graphics
+[4.651s] -- Looking for ignition-math6 -- found version 6.15.1
+[4.656s] -- Looking for ignition-fuel_tools4 -- found version 4.9.2
+[4.657s] -- Searching for dependencies of ignition-fuel_tools4
+[4.949s] -- Found CURL: /usr/lib/x86_64-linux-gnu/libcurl.so (found version "7.68.0")  
+[4.967s] -- Checking for module 'jsoncpp'
+[5.023s] --   Found jsoncpp, version 1.7.4
+[5.118s] -- Found JSONCPP: TRUE  
+[5.129s] -- Checking for module 'libzip'
+[5.160s] --   Found libzip, version 1.5.1
+[5.347s] -- Found ZIP: TRUE  
+[5.348s] -- Looking for ignition-common3 -- found version 3.17.1
+[5.349s] -- Looking for ignition-math6 -- found version 6.15.1
+[5.350s] -- Looking for ignition-msgs5 -- found version 5.11.1
+[5.359s] -- Gazebo version: 11.15
+[5.593s] -- Configuring done
+[5.618s] -- Generating done
+[5.635s] -- Build files have been written to: /home/farouk/ros2_ws/build/my_robot_description
+[5.692s] Invoked command in '/home/farouk/ros2_ws/build/my_robot_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/farouk/ros2_ws/install/robot_arm_bridge:/opt/ros/foxy /usr/local/bin/cmake /home/farouk/ros2_ws/src/my_robot_description -DCMAKE_INSTALL_PREFIX=/home/farouk/ros2_ws/install/my_robot_description
+[5.698s] Invoking command in '/home/farouk/ros2_ws/build/my_robot_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/farouk/ros2_ws/install/robot_arm_bridge:/opt/ros/foxy /usr/local/bin/cmake --build /home/farouk/ros2_ws/build/my_robot_description -- -j4 -l4
+[5.858s] Invoked command in '/home/farouk/ros2_ws/build/my_robot_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/farouk/ros2_ws/install/robot_arm_bridge:/opt/ros/foxy /usr/local/bin/cmake --build /home/farouk/ros2_ws/build/my_robot_description -- -j4 -l4
+[5.904s] Invoking command in '/home/farouk/ros2_ws/build/my_robot_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/farouk/ros2_ws/install/robot_arm_bridge:/opt/ros/foxy /usr/local/bin/cmake --install /home/farouk/ros2_ws/build/my_robot_description
+[5.930s] -- Install configuration: ""
+[5.930s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/launch
+[5.931s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/launch/spawn_robot.launch.py
+[5.931s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/urdf
+[5.931s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/urdf/x.txt
+[5.931s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/urdf/old.txt
+[5.931s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/urdf/my_robot.urdf.xacro
+[5.932s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/meshes
+[5.932s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/meshes/link_3_wrist.stl
+[5.935s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/meshes/link_1_shoulder.stl
+[5.935s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/meshes/base_link.stl
+[5.935s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/meshes/link_4_wrist.stl
+[5.946s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/meshes/link_2_elbow.stl
+[5.947s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/meshes/base.stl
+[5.952s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/config
+[5.952s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/config/my_robot_arm_controllers.yaml
+[5.953s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/worlds
+[5.953s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/worlds/my_robot.world
+[5.956s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/ament_index/resource_index/package_run_dependencies/my_robot_description
+[5.957s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/ament_index/resource_index/parent_prefix_path/my_robot_description
+[5.957s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/environment/ament_prefix_path.sh
+[5.957s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/environment/ament_prefix_path.dsv
+[5.957s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/environment/path.sh
+[5.959s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/environment/path.dsv
+[5.959s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/local_setup.bash
+[5.960s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/local_setup.sh
+[5.961s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/local_setup.zsh
+[5.962s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/local_setup.dsv
+[5.962s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/package.dsv
+[5.963s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/ament_index/resource_index/packages/my_robot_description
+[5.964s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/cmake/my_robot_descriptionConfig.cmake
+[5.964s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/cmake/my_robot_descriptionConfig-version.cmake
+[5.964s] -- Installing: /home/farouk/ros2_ws/install/my_robot_description/share/my_robot_description/package.xml
+[5.972s] Invoked command in '/home/farouk/ros2_ws/build/my_robot_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/farouk/ros2_ws/install/robot_arm_bridge:/opt/ros/foxy /usr/local/bin/cmake --install /home/farouk/ros2_ws/build/my_robot_description

@@ -30,7 +30,7 @@ class RobotArmBridge(Node):
         self.serial_port = self.get_parameter('serial_port').get_parameter_value().string_value
         self.baud_rate = self.get_parameter('baud_rate').get_parameter_value().integer_value
         
-        self.speed_factor = 20.0 
+        self.speed_factor = 150.0 
         self.ser = None
 
         self.connection_thread = threading.Thread(target=self.manage_connection)

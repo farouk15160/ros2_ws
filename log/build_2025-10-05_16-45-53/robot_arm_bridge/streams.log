@@ -1,0 +1,29 @@
+[1.301s] Invoking command in '/home/farouk/ros2_ws/src/robot_arm_bridge': PYTHONPATH=/home/farouk/ros2_ws/build/robot_arm_bridge/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_arm_bridge build --build-base /home/farouk/ros2_ws/build/robot_arm_bridge/build install --record /home/farouk/ros2_ws/build/robot_arm_bridge/install.log --install-scripts $base/lib/robot_arm_bridge --single-version-externally-managed install_data
+[1.774s] running egg_info
+[1.775s] writing ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/PKG-INFO
+[1.776s] writing dependency_links to ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/dependency_links.txt
+[1.777s] writing entry points to ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/entry_points.txt
+[1.778s] writing requirements to ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/requires.txt
+[1.778s] writing top-level names to ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/top_level.txt
+[1.842s] reading manifest file '../../build/robot_arm_bridge/robot_arm_bridge.egg-info/SOURCES.txt'
+[1.843s] writing manifest file '../../build/robot_arm_bridge/robot_arm_bridge.egg-info/SOURCES.txt'
+[1.844s] running build
+[1.844s] running build_py
+[1.845s] copying robot_arm_bridge/serial_bridge_node.py -> /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge
+[1.846s] copying robot_arm_bridge/web_gui_node.py -> /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge
+[1.848s] running install
+[1.849s] running install_lib
+[1.851s] copying /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge/serial_bridge_node.py -> /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge
+[1.853s] copying /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge/web_gui_node.py -> /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge
+[1.855s] byte-compiling /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge/serial_bridge_node.py to serial_bridge_node.cpython-38.pyc
+[1.861s] byte-compiling /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge/web_gui_node.py to web_gui_node.cpython-38.pyc
+[1.866s] running install_data
+[1.867s] running install_egg_info
+[1.871s] removing '/home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge-0.0.1-py3.8.egg-info' (and everything under it)
+[1.872s] Copying ../../build/robot_arm_bridge/robot_arm_bridge.egg-info to /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge-0.0.1-py3.8.egg-info
+[1.879s] running install_scripts
+[1.908s] Installing gazebo_mirror script to /home/farouk/ros2_ws/install/robot_arm_bridge/lib/robot_arm_bridge
+[1.909s] Installing serial_bridge script to /home/farouk/ros2_ws/install/robot_arm_bridge/lib/robot_arm_bridge
+[1.910s] Installing web_gui script to /home/farouk/ros2_ws/install/robot_arm_bridge/lib/robot_arm_bridge
+[1.911s] writing list of installed files to '/home/farouk/ros2_ws/build/robot_arm_bridge/install.log'
+[1.954s] Invoked command in '/home/farouk/ros2_ws/src/robot_arm_bridge' returned '0': PYTHONPATH=/home/farouk/ros2_ws/build/robot_arm_bridge/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_arm_bridge build --build-base /home/farouk/ros2_ws/build/robot_arm_bridge/build install --record /home/farouk/ros2_ws/build/robot_arm_bridge/install.log --install-scripts $base/lib/robot_arm_bridge --single-version-externally-managed install_data

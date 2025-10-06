@@ -12,6 +12,7 @@ resource/robot_arm_bridge
 robot_arm_bridge/__init__.py
 robot_arm_bridge/gazebo_mirror_node.py
 robot_arm_bridge/serial_bridge_node.py
+robot_arm_bridge/web_gui_node.py
 test/test_copyright.py
 test/test_flake8.py
 test/test_pep257.py
