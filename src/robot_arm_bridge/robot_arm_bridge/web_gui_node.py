@@ -1,5 +1,7 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy # <-- ADDED IMPORT
+import rclpy.duration                                                   # <-- ADDED IMPORT
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float32MultiArray, Float32, Bool
 import serial
@@ -14,7 +16,7 @@ import logging
 
 # ==============================================================================
 # 1. CONSTANTS AND PACKET DEFINITIONS
-# ==============================================================================
+# =========================================sss=====================================
 
 HEADER_BYTE = 0xA5
 # =========================================================
@@ -26,7 +28,7 @@ COMMAND_PACKET_PAYLOAD_FORMAT = '<BB8f' # Use unambiguous format for 8 floats
 # ESP32 to PC: header(B), main_current(f), grip_current(f), 6 angles(f), checksum(B)
 STATUS_PACKET_FORMAT = '<Bff6fB'
 STATUS_PACKET_SIZE = struct.calcsize(STATUS_PACKET_FORMAT)
-STATUS_TIMEOUT_SEC = 2.0  # Seconds without status packet before warning/E-Stop
+STATUS_TIMEOUT_SEC = 0.5  # Seconds without status packet before warning/E-Stop
 
 # Disable verbose logging from Flask and SocketIO to keep the console clean
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
@@ -69,9 +71,24 @@ class RobotArmBridge(Node):
         self.is_connected = False
         self.emergency_stop_active = False
         self.sequence = []
+        
+        # --- NEW: Variables for GUI Throttling ---
+        self.last_emit_time = self.get_clock().now()
+        self.emit_interval = rclpy.duration.Duration(seconds=1.0 / 30.0)  # Target 30 Hz for GUI
+
+        # --- NEW: QoS Profile for High-Frequency Sensor Data ---
+        sensor_qos_profile = QoSProfile(
+            reliability=QoSReliabilityPolicy.BEST_EFFORT,
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=1
+        )
 
         # --- ROS Publishers & Subscribers ---
-        self.joint_state_publisher = self.create_publisher(JointState, 'joint_states', 10)
+        self.joint_state_publisher = self.create_publisher(
+            JointState, 
+            'joint_states', 
+            qos_profile=sensor_qos_profile # <-- APPLIED QOS PROFILE
+        )
         self.main_current_publisher = self.create_publisher(Float32, 'main_current', 10)
         self.gripper_current_publisher = self.create_publisher(Float32, 'gripper_current', 10)
         self.emergency_stop_publisher = self.create_publisher(Bool, 'emergency_stop', 10)
@@ -136,7 +153,7 @@ class RobotArmBridge(Node):
                 break
             except Exception as e:
                 self.get_logger().error(f"Unexpected error in read loop: {e}")
-            time.sleep(0.001)
+            # time.sleep(0.001) # <-- REMOVED this line for maximum frequency
 
     def process_status_packet(self, data):
         self.last_status_time = self.get_clock().now()
@@ -166,7 +183,11 @@ class RobotArmBridge(Node):
             joint_state_msg.position = [self.deg_to_rad(angle) for angle in self.current_joint_angles_deg]
             self.joint_state_publisher.publish(joint_state_msg)
             
-            self.emit_status()
+            # --- MODIFIED: Throttle GUI updates ---
+            now = self.get_clock().now()
+            if now - self.last_emit_time > self.emit_interval:
+                self.emit_status()
+                self.last_emit_time = now
 
         except struct.error as e:
             self.get_logger().error(f"Failed to unpack status packet: {e}")
@@ -464,7 +485,7 @@ HTML_TEMPLATE = """
         const slidersContainer = document.getElementById('joint-sliders');
         const statusContainer = document.getElementById('joint-status-display');
         JOINT_NAMES.forEach((name, i) => {
-            slidersContainer.innerHTML += `<div class="control-group"><label for="j${i}">${name}: <span id="j${i}-value" class="value-display">90</span>°</label><input type="range" id="j${i}" min="0" max="180" value="90"></div>`;
+            slidersContainer.innerHTML += `<div class="control-group"><label for="j${i}">${name}: <span id="j${i}-value" class="value-display">90</span>°</label><input type="range" id="j${i}" min="0" max="${i===0 ? 360 : 180}" value="90"></div>`;
             statusContainer.innerHTML += `<div>${name}: <span id="s${i}" class="status-value">0.00</span></div>`;
         });
         JOINT_NAMES.forEach((_, i) => {
