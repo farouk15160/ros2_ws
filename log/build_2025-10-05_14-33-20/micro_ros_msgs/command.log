@@ -1,4 +1,0 @@
-Invoking command in '/home/farouk/ros2_ws/build/micro_ros_msgs': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/local/bin/cmake --build /home/farouk/ros2_ws/build/micro_ros_msgs -- -j4 -l4
-Invoked command in '/home/farouk/ros2_ws/build/micro_ros_msgs' returned '0': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/local/bin/cmake --build /home/farouk/ros2_ws/build/micro_ros_msgs -- -j4 -l4
-Invoking command in '/home/farouk/ros2_ws/build/micro_ros_msgs': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/local/bin/cmake --install /home/farouk/ros2_ws/build/micro_ros_msgs
-Invoked command in '/home/farouk/ros2_ws/build/micro_ros_msgs' returned '0': CMAKE_PREFIX_PATH=/opt/ros/foxy /usr/local/bin/cmake --install /home/farouk/ros2_ws/build/micro_ros_msgs

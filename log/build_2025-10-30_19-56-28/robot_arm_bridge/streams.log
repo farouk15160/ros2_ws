@@ -1,0 +1,61 @@
+[0.800s] Invoking command in '/home/farouk/ros2_ws/src/robot_arm_bridge': PYTHONPATH=/home/farouk/ros2_ws/build/robot_arm_bridge/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_arm_bridge build --build-base /home/farouk/ros2_ws/build/robot_arm_bridge/build install --record /home/farouk/ros2_ws/build/robot_arm_bridge/install.log --install-scripts $base/lib/robot_arm_bridge --single-version-externally-managed install_data
+[1.065s] running egg_info
+[1.066s] creating ../../build/robot_arm_bridge/robot_arm_bridge.egg-info
+[1.066s] writing ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/PKG-INFO
+[1.066s] writing dependency_links to ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/dependency_links.txt
+[1.067s] writing entry points to ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/entry_points.txt
+[1.067s] writing requirements to ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/requires.txt
+[1.067s] writing top-level names to ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/top_level.txt
+[1.068s] writing manifest file '../../build/robot_arm_bridge/robot_arm_bridge.egg-info/SOURCES.txt'
+[1.100s] reading manifest file '../../build/robot_arm_bridge/robot_arm_bridge.egg-info/SOURCES.txt'
+[1.101s] writing manifest file '../../build/robot_arm_bridge/robot_arm_bridge.egg-info/SOURCES.txt'
+[1.101s] running build
+[1.101s] running build_py
+[1.102s] creating /home/farouk/ros2_ws/build/robot_arm_bridge/build
+[1.102s] creating /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib
+[1.102s] creating /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge
+[1.102s] copying robot_arm_bridge/serial_bridge_node.py -> /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge
+[1.107s] copying robot_arm_bridge/bridge_constants.py -> /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge
+[1.108s] copying robot_arm_bridge/web_app.py -> /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge
+[1.108s] copying robot_arm_bridge/web_gui_node.py -> /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge
+[1.108s] copying robot_arm_bridge/bridge_node.py -> /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge
+[1.108s] copying robot_arm_bridge/__init__.py -> /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge
+[1.108s] running install
+[1.109s] running install_lib
+[1.110s] creating /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge
+[1.110s] copying /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge/serial_bridge_node.py -> /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge
+[1.110s] copying /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge/bridge_constants.py -> /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge
+[1.111s] copying /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge/web_app.py -> /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge
+[1.111s] copying /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge/web_gui_node.py -> /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge
+[1.111s] copying /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge/bridge_node.py -> /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge
+[1.111s] copying /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge/__init__.py -> /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge
+[1.111s] byte-compiling /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge/serial_bridge_node.py to serial_bridge_node.cpython-38.pyc
+[1.114s] byte-compiling /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge/bridge_constants.py to bridge_constants.cpython-38.pyc
+[1.114s] byte-compiling /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge/web_app.py to web_app.cpython-38.pyc
+[1.116s] byte-compiling /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge/web_gui_node.py to web_gui_node.cpython-38.pyc
+[1.116s] byte-compiling /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge/bridge_node.py to bridge_node.cpython-38.pyc
+[1.124s] byte-compiling /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge/__init__.py to __init__.cpython-38.pyc
+[1.125s] running install_data
+[1.125s] creating /home/farouk/ros2_ws/install/robot_arm_bridge/share/ament_index
+[1.125s] creating /home/farouk/ros2_ws/install/robot_arm_bridge/share/ament_index/resource_index
+[1.125s] creating /home/farouk/ros2_ws/install/robot_arm_bridge/share/ament_index/resource_index/packages
+[1.125s] copying resource/robot_arm_bridge -> /home/farouk/ros2_ws/install/robot_arm_bridge/share/ament_index/resource_index/packages
+[1.125s] copying package.xml -> /home/farouk/ros2_ws/install/robot_arm_bridge/share/robot_arm_bridge
+[1.125s] creating /home/farouk/ros2_ws/install/robot_arm_bridge/share/robot_arm_bridge/launch
+[1.126s] creating /home/farouk/ros2_ws/install/robot_arm_bridge/share/robot_arm_bridge/static
+[1.126s] creating /home/farouk/ros2_ws/install/robot_arm_bridge/share/robot_arm_bridge/static/models
+[1.126s] copying robot_arm_bridge/static/models/link_shoulder.stl -> /home/farouk/ros2_ws/install/robot_arm_bridge/share/robot_arm_bridge/static/models
+[1.133s] copying robot_arm_bridge/static/models/link_elbow.stl -> /home/farouk/ros2_ws/install/robot_arm_bridge/share/robot_arm_bridge/static/models
+[1.135s] copying robot_arm_bridge/static/models/base_link.stl -> /home/farouk/ros2_ws/install/robot_arm_bridge/share/robot_arm_bridge/static/models
+[1.139s] copying robot_arm_bridge/static/models/link_4_wrist.stl -> /home/farouk/ros2_ws/install/robot_arm_bridge/share/robot_arm_bridge/static/models
+[1.141s] copying robot_arm_bridge/static/models/base.stl -> /home/farouk/ros2_ws/install/robot_arm_bridge/share/robot_arm_bridge/static/models
+[1.149s] copying robot_arm_bridge/static/models/gripper_joint.stl -> /home/farouk/ros2_ws/install/robot_arm_bridge/share/robot_arm_bridge/static/models
+[1.182s] creating /home/farouk/ros2_ws/install/robot_arm_bridge/share/robot_arm_bridge/templates
+[1.182s] copying robot_arm_bridge/templates/index.html -> /home/farouk/ros2_ws/install/robot_arm_bridge/share/robot_arm_bridge/templates
+[1.182s] running install_egg_info
+[1.184s] Copying ../../build/robot_arm_bridge/robot_arm_bridge.egg-info to /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge-0.0.1-py3.8.egg-info
+[1.185s] running install_scripts
+[1.201s] Installing serial_bridge script to /home/farouk/ros2_ws/install/robot_arm_bridge/lib/robot_arm_bridge
+[1.201s] Installing web_gui script to /home/farouk/ros2_ws/install/robot_arm_bridge/lib/robot_arm_bridge
+[1.202s] writing list of installed files to '/home/farouk/ros2_ws/build/robot_arm_bridge/install.log'
+[1.224s] Invoked command in '/home/farouk/ros2_ws/src/robot_arm_bridge' returned '0': PYTHONPATH=/home/farouk/ros2_ws/build/robot_arm_bridge/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_arm_bridge build --build-base /home/farouk/ros2_ws/build/robot_arm_bridge/build install --record /home/farouk/ros2_ws/build/robot_arm_bridge/install.log --install-scripts $base/lib/robot_arm_bridge --single-version-externally-managed install_data
