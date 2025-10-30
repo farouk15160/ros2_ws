@@ -1,0 +1,134 @@
+[0.000000] (-) TimerEvent: {}
+[0.005063] (-) JobUnselected: {'identifier': 'micro_ros_agent'}
+[0.005969] (-) JobUnselected: {'identifier': 'micro_ros_msgs'}
+[0.006291] (-) JobUnselected: {'identifier': 'my_robot_description'}
+[0.006585] (robot_arm_bridge) JobQueued: {'identifier': 'robot_arm_bridge', 'dependencies': OrderedDict()}
+[0.006884] (robot_arm_bridge) JobStarted: {'identifier': 'robot_arm_bridge'}
+[0.099314] (-) TimerEvent: {}
+[0.202692] (-) TimerEvent: {}
+[0.303920] (-) TimerEvent: {}
+[0.405849] (-) TimerEvent: {}
+[0.507054] (-) TimerEvent: {}
+[0.608460] (-) TimerEvent: {}
+[0.709683] (-) TimerEvent: {}
+[0.810883] (-) TimerEvent: {}
+[0.912092] (-) TimerEvent: {}
+[1.013397] (-) TimerEvent: {}
+[1.114704] (-) TimerEvent: {}
+[1.216003] (-) TimerEvent: {}
+[1.317390] (-) TimerEvent: {}
+[1.418698] (-) TimerEvent: {}
+[1.519966] (-) TimerEvent: {}
+[1.621420] (-) TimerEvent: {}
+[1.722747] (-) TimerEvent: {}
+[1.824003] (-) TimerEvent: {}
+[1.925411] (-) TimerEvent: {}
+[2.026708] (-) TimerEvent: {}
+[2.128019] (-) TimerEvent: {}
+[2.229417] (-) TimerEvent: {}
+[2.330732] (-) TimerEvent: {}
+[2.432098] (-) TimerEvent: {}
+[2.533501] (-) TimerEvent: {}
+[2.636044] (-) TimerEvent: {}
+[2.738051] (-) TimerEvent: {}
+[2.840206] (-) TimerEvent: {}
+[2.941560] (-) TimerEvent: {}
+[3.042925] (-) TimerEvent: {}
+[3.144269] (-) TimerEvent: {}
+[3.245509] (-) TimerEvent: {}
+[3.346872] (-) TimerEvent: {}
+[3.448227] (-) TimerEvent: {}
+[3.549570] (-) TimerEvent: {}
+[3.650878] (-) TimerEvent: {}
+[3.752541] (-) TimerEvent: {}
+[3.853955] (-) TimerEvent: {}
+[3.955273] (-) TimerEvent: {}
+[4.056620] (-) TimerEvent: {}
+[4.157914] (-) TimerEvent: {}
+[4.259264] (-) TimerEvent: {}
+[4.360594] (-) TimerEvent: {}
+[4.461944] (-) TimerEvent: {}
+[4.563281] (-) TimerEvent: {}
+[4.664743] (-) TimerEvent: {}
+[4.766361] (-) TimerEvent: {}
+[4.867538] (-) TimerEvent: {}
+[4.969189] (-) TimerEvent: {}
+[5.070383] (-) TimerEvent: {}
+[5.171547] (-) TimerEvent: {}
+[5.272702] (-) TimerEvent: {}
+[5.373868] (-) TimerEvent: {}
+[5.475040] (-) TimerEvent: {}
+[5.576240] (-) TimerEvent: {}
+[5.677460] (-) TimerEvent: {}
+[5.778772] (-) TimerEvent: {}
+[5.879961] (-) TimerEvent: {}
+[5.981221] (-) TimerEvent: {}
+[6.082421] (-) TimerEvent: {}
+[6.183594] (-) TimerEvent: {}
+[6.284828] (-) TimerEvent: {}
+[6.386014] (-) TimerEvent: {}
+[6.487167] (-) TimerEvent: {}
+[6.589071] (-) TimerEvent: {}
+[6.691300] (-) TimerEvent: {}
+[6.792664] (-) TimerEvent: {}
+[6.894011] (-) TimerEvent: {}
+[6.916401] (robot_arm_bridge) Command: {'cmd': ['/usr/bin/python3', '-W', 'ignore:setup.py install is deprecated', '-W', 'ignore:easy_install command is deprecated', 'setup.py', 'egg_info', '--egg-base', '../../build/robot_arm_bridge', 'build', '--build-base', '/home/farouk/ros2_ws/build/robot_arm_bridge/build', 'install', '--record', '/home/farouk/ros2_ws/build/robot_arm_bridge/install.log', '--install-scripts', '$base/lib/robot_arm_bridge', '--single-version-externally-managed', 'install_data'], 'cwd': '/home/farouk/ros2_ws/src/robot_arm_bridge', 'env': {'LESSOPEN': '| /usr/bin/lesspipe %s', 'USER': 'farouk', 'SSH_CLIENT': '192.168.178.140 52338 22', 'LC_TIME': 'de_DE.UTF-8', 'XDG_SESSION_TYPE': 'tty', 'STM32CubeMX_PATH': '/home/farouk/STM32CubeMX', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/home/farouk/ros2_ws/install/micro_ros_agent/lib:/home/farouk/ros2_ws/install/micro_ros_msgs/lib:/usr/lib/x86_64-linux-gnu/gazebo-11/plugins:/opt/ros/foxy/opt/yaml_cpp_vendor/lib:/opt/ros/foxy/opt/rviz_ogre_vendor/lib:/opt/ros/foxy/lib/x86_64-linux-gnu:/opt/ros/foxy/lib', 'MOTD_SHOWN': 'pam', 'HOME': '/home/farouk', 'OLDPWD': '/home/farouk/ros2_ws', 'SSH_TTY': '/dev/pts/1', 'ROS_PYTHON_VERSION': '3', 'LC_MONETARY': 'de_DE.UTF-8', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLCON_PREFIX_PATH': '/home/farouk/ros2_ws/install', 'ROS_DISTRO': 'foxy', 'LOGNAME': 'farouk', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'XDG_SESSION_CLASS': 'user', 'TERM': 'xterm-256color', 'XDG_SESSION_ID': '265', 'ROS_LOCALHOST_ONLY': '0', 'PATH': '/opt/ros/foxy/bin:/home/farouk/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin', 'LC_ADDRESS': 'de_DE.UTF-8', 'XDG_RUNTIME_DIR': '/run/user/1000', 'LANG': 'en_US.UTF-8', 'LC_TELEPHONE': 'de_DE.UTF-8', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:', 'AMENT_PREFIX_PATH': '/home/farouk/ros2_ws/install/robot_arm_bridge:/home/farouk/ros2_ws/install/my_robot_description:/home/farouk/ros2_ws/install/micro_ros_agent:/home/farouk/ros2_ws/install/micro_ros_msgs:/opt/ros/foxy', 'SHELL': '/bin/bash', 'LC_NAME': 'de_DE.UTF-8', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'LC_MEASUREMENT': 'de_DE.UTF-8', 'LC_IDENTIFICATION': 'de_DE.UTF-8', 'PWD': '/home/farouk/ros2_ws/build/robot_arm_bridge', 'SSH_CONNECTION': '192.168.178.140 52338 192.168.178.150 22', 'XDG_DATA_DIRS': '/usr/local/share:/usr/share:/var/lib/snapd/desktop', 'PYTHONPATH': '/home/farouk/ros2_ws/build/robot_arm_bridge/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages:/home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages:/home/farouk/ros2_ws/install/micro_ros_msgs/lib/python3.8/site-packages:/opt/ros/foxy/lib/python3.8/site-packages', 'LC_NUMERIC': 'de_DE.UTF-8', 'LC_PAPER': 'de_DE.UTF-8', 'COLCON': '1', 'CMAKE_PREFIX_PATH': '/home/farouk/ros2_ws/install/my_robot_description:/home/farouk/ros2_ws/install/micro_ros_agent:/home/farouk/ros2_ws/install/micro_ros_msgs'}, 'shell': False}
+[6.994510] (-) TimerEvent: {}
+[7.096228] (-) TimerEvent: {}
+[7.197694] (-) TimerEvent: {}
+[7.299027] (-) TimerEvent: {}
+[7.400321] (-) TimerEvent: {}
+[7.501708] (-) TimerEvent: {}
+[7.603031] (-) TimerEvent: {}
+[7.704434] (-) TimerEvent: {}
+[7.805951] (-) TimerEvent: {}
+[7.907559] (-) TimerEvent: {}
+[8.009024] (-) TimerEvent: {}
+[8.110372] (-) TimerEvent: {}
+[8.211691] (-) TimerEvent: {}
+[8.313106] (-) TimerEvent: {}
+[8.414468] (-) TimerEvent: {}
+[8.515806] (-) TimerEvent: {}
+[8.617223] (-) TimerEvent: {}
+[8.718865] (-) TimerEvent: {}
+[8.820673] (-) TimerEvent: {}
+[8.921885] (-) TimerEvent: {}
+[9.023066] (-) TimerEvent: {}
+[9.124233] (-) TimerEvent: {}
+[9.225620] (-) TimerEvent: {}
+[9.326952] (-) TimerEvent: {}
+[9.364689] (robot_arm_bridge) StdoutLine: {'line': b'running egg_info\n'}
+[9.370084] (robot_arm_bridge) StdoutLine: {'line': b'writing ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/PKG-INFO\n'}
+[9.371728] (robot_arm_bridge) StdoutLine: {'line': b'writing dependency_links to ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/dependency_links.txt\n'}
+[9.373257] (robot_arm_bridge) StdoutLine: {'line': b'writing entry points to ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/entry_points.txt\n'}
+[9.375008] (robot_arm_bridge) StdoutLine: {'line': b'writing requirements to ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/requires.txt\n'}
+[9.376022] (robot_arm_bridge) StdoutLine: {'line': b'writing top-level names to ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/top_level.txt\n'}
+[9.427273] (-) TimerEvent: {}
+[9.528622] (-) TimerEvent: {}
+[9.629983] (-) TimerEvent: {}
+[9.671362] (robot_arm_bridge) StdoutLine: {'line': b"reading manifest file '../../build/robot_arm_bridge/robot_arm_bridge.egg-info/SOURCES.txt'\n"}
+[9.680894] (robot_arm_bridge) StdoutLine: {'line': b"writing manifest file '../../build/robot_arm_bridge/robot_arm_bridge.egg-info/SOURCES.txt'\n"}
+[9.682665] (robot_arm_bridge) StdoutLine: {'line': b'running build\n'}
+[9.683656] (robot_arm_bridge) StdoutLine: {'line': b'running build_py\n'}
+[9.685012] (robot_arm_bridge) StdoutLine: {'line': b'copying robot_arm_bridge/web_gui_node.py -> /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge\n'}
+[9.687045] (robot_arm_bridge) StdoutLine: {'line': b'running install\n'}
+[9.693104] (robot_arm_bridge) StdoutLine: {'line': b'running install_lib\n'}
+[9.702110] (robot_arm_bridge) StdoutLine: {'line': b'copying /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge/web_gui_node.py -> /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge\n'}
+[9.708148] (robot_arm_bridge) StdoutLine: {'line': b'byte-compiling /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge/web_gui_node.py to web_gui_node.cpython-38.pyc\n'}
+[9.730313] (-) TimerEvent: {}
+[9.756275] (robot_arm_bridge) StdoutLine: {'line': b'running install_data\n'}
+[9.758024] (robot_arm_bridge) StdoutLine: {'line': b'running install_egg_info\n'}
+[9.770829] (robot_arm_bridge) StdoutLine: {'line': b"removing '/home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge-0.0.1-py3.8.egg-info' (and everything under it)\n"}
+[9.773283] (robot_arm_bridge) StdoutLine: {'line': b'Copying ../../build/robot_arm_bridge/robot_arm_bridge.egg-info to /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge-0.0.1-py3.8.egg-info\n'}
+[9.781212] (robot_arm_bridge) StdoutLine: {'line': b'running install_scripts\n'}
+[9.830620] (-) TimerEvent: {}
+[9.917008] (robot_arm_bridge) StdoutLine: {'line': b'Installing gazebo_mirror script to /home/farouk/ros2_ws/install/robot_arm_bridge/lib/robot_arm_bridge\n'}
+[9.918811] (robot_arm_bridge) StdoutLine: {'line': b'Installing serial_bridge script to /home/farouk/ros2_ws/install/robot_arm_bridge/lib/robot_arm_bridge\n'}
+[9.920273] (robot_arm_bridge) StdoutLine: {'line': b'Installing web_gui script to /home/farouk/ros2_ws/install/robot_arm_bridge/lib/robot_arm_bridge\n'}
+[9.922530] (robot_arm_bridge) StdoutLine: {'line': b"writing list of installed files to '/home/farouk/ros2_ws/build/robot_arm_bridge/install.log'\n"}
+[9.931761] (-) TimerEvent: {}
+[10.033387] (-) TimerEvent: {}
+[10.074364] (robot_arm_bridge) CommandEnded: {'returncode': 0}
+[10.135118] (-) TimerEvent: {}
+[10.164739] (robot_arm_bridge) JobEnded: {'identifier': 'robot_arm_bridge', 'rc': 0}
+[10.170277] (-) EventReactorShutdown: {}

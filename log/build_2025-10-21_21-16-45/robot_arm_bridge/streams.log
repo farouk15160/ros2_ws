@@ -1,0 +1,26 @@
+[1.148s] Invoking command in '/home/farouk/ros2_ws/src/robot_arm_bridge': PYTHONPATH=/home/farouk/ros2_ws/build/robot_arm_bridge/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_arm_bridge build --build-base /home/farouk/ros2_ws/build/robot_arm_bridge/build install --record /home/farouk/ros2_ws/build/robot_arm_bridge/install.log --install-scripts $base/lib/robot_arm_bridge --single-version-externally-managed install_data
+[1.471s] running egg_info
+[1.472s] writing ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/PKG-INFO
+[1.472s] writing dependency_links to ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/dependency_links.txt
+[1.472s] writing entry points to ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/entry_points.txt
+[1.472s] writing requirements to ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/requires.txt
+[1.473s] writing top-level names to ../../build/robot_arm_bridge/robot_arm_bridge.egg-info/top_level.txt
+[1.516s] reading manifest file '../../build/robot_arm_bridge/robot_arm_bridge.egg-info/SOURCES.txt'
+[1.518s] writing manifest file '../../build/robot_arm_bridge/robot_arm_bridge.egg-info/SOURCES.txt'
+[1.518s] running build
+[1.518s] running build_py
+[1.518s] copying robot_arm_bridge/web_gui_node.py -> /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge
+[1.518s] running install
+[1.519s] running install_lib
+[1.521s] copying /home/farouk/ros2_ws/build/robot_arm_bridge/build/lib/robot_arm_bridge/web_gui_node.py -> /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge
+[1.522s] byte-compiling /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge/web_gui_node.py to web_gui_node.cpython-38.pyc
+[1.530s] running install_data
+[1.530s] running install_egg_info
+[1.532s] removing '/home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge-0.0.1-py3.8.egg-info' (and everything under it)
+[1.532s] Copying ../../build/robot_arm_bridge/robot_arm_bridge.egg-info to /home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages/robot_arm_bridge-0.0.1-py3.8.egg-info
+[1.533s] running install_scripts
+[1.553s] Installing gazebo_mirror script to /home/farouk/ros2_ws/install/robot_arm_bridge/lib/robot_arm_bridge
+[1.553s] Installing serial_bridge script to /home/farouk/ros2_ws/install/robot_arm_bridge/lib/robot_arm_bridge
+[1.554s] Installing web_gui script to /home/farouk/ros2_ws/install/robot_arm_bridge/lib/robot_arm_bridge
+[1.554s] writing list of installed files to '/home/farouk/ros2_ws/build/robot_arm_bridge/install.log'
+[1.581s] Invoked command in '/home/farouk/ros2_ws/src/robot_arm_bridge' returned '0': PYTHONPATH=/home/farouk/ros2_ws/build/robot_arm_bridge/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/farouk/ros2_ws/install/robot_arm_bridge/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/robot_arm_bridge build --build-base /home/farouk/ros2_ws/build/robot_arm_bridge/build install --record /home/farouk/ros2_ws/build/robot_arm_bridge/install.log --install-scripts $base/lib/robot_arm_bridge --single-version-externally-managed install_data

@@ -12,24 +12,38 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        # Include launch files if you add any to this package
-        (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py'))
+        
+        # Include launch files
+        (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
+        
+        # --- Data Files Fix ---
+        
+        # Copies the 3D models for the web GUI
+        (os.path.join('share', package_name, 'static/models'), 
+         glob(os.path.join(package_name, 'static', 'models', '*.stl'))),
+         
+       
+        # Copies the index.html file for the web server
+        (os.path.join('share', package_name, 'templates'), 
+         glob(os.path.join(package_name, 'templates', '*.html'))),
+         
+        # ---------------------
     ],
-    install_requires=['setuptools'],
+    install_requires=['setuptools', 'flask', 'flask_socketio', 'pyserial', 'ament_index_python'], # Added dependencies
     zip_safe=True,
     maintainer='farouk',
-    maintainer_email='farouk@todo.todo',
-    description='ROS2 bridge for the ESP32 robot arm.',
+    maintainer_email='farouk15160@gmail.com',
+    description='ROS2 bridge for the Robot arm.',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             # Entry point for the hardware bridge
             'serial_bridge = robot_arm_bridge.serial_bridge_node:main',
+            
+            # Entry point for the new Web GUI node
             'web_gui = robot_arm_bridge.web_gui_node:main',
-            # Entry point for the Gazebo mirror
-            'gazebo_mirror = robot_arm_bridge.gazebo_mirror_node:main',
+            
         ],
     },
 )
-
