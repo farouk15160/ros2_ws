@@ -1,0 +1,13 @@
+# --- Web Backend & Robot Control ---
+Flask
+Flask-SocketIO
+python-socketio
+pyserial         # For serial communication with the robot arm MCU
+gunicorn         # WSGI server for production (runs on Linux/Jetson)
+
+# --- AI, Computer Vision & YOLO ---
+numpy            # Core numerical library
+#scipy            # For scientific computing (e.g., transformations)
+#Pillow           # (PIL) For image handling
+#opencv-python-headless  # OpenCV for CV tasks (headless is best for servers/Jetson)
+#ultralytics      # The official package for YOLOv8

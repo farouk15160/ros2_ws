@@ -1,0 +1,13 @@
+# ROS build and install directories
+build/
+devel/        # ROS 1 only
+install/      # ROS 2 only
+
+# ROS log files
+log/
+
+# Ignore temporary files
+*.pyc
+*.swp
+*.swo
+*.DS_Store
