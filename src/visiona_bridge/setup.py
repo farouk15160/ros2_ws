@@ -13,42 +13,26 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         
-        # Include launch files
         (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
-        
-        # --- Data Files Fix ---
-        
-        # Copies the 3D models for the web GUI
         (os.path.join('share', package_name, 'static/models'), 
          glob(os.path.join(package_name, 'static', 'models', '*.stl'))),
          
         
-        # Copies the index.html file for the web server
         (os.path.join('share', package_name, 'templates'), 
          glob(os.path.join(package_name, 'templates', '*.html'))),
-         
-        # ---------------------
-
-        # --- ADDED FOR ROBOT VISUALIZATION ---
         
-        # 1. Install URDF files (xacro)
         (os.path.join('share', package_name, 'urdf'), 
             glob(os.path.join('urdf', '*.xacro'))),
             
-        # 2. Install Mesh files (stl)
         (os.path.join('share', package_name, 'meshes'), 
             glob(os.path.join('meshes', '*.stl'))),
             
-        # 3. Install RViz config files
         (os.path.join('share', package_name, 'rviz'), 
             glob(os.path.join('rviz', '*.rviz'))),
             
-        # 4. CORRECTED: This is the file 'visiona_bridge' from your 'ls' command
         (os.path.join('share', package_name, 'resource'), 
             ['resource/visiona_bridge']),
-
-        # -----------------------------------
-    ],
+],
     install_requires=['setuptools', 'flask', 'flask_socketio', 'pyserial', 'ament_index_python'], # Added dependencies
     zip_safe=True,
     maintainer='farouk',

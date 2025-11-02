@@ -1,0 +1,28 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 30
+
+# This is the NEW publisher for /joint_states
+joint_state_broadcaster:
+  type: joint_state_broadcaster/JointStateBroadcaster
+
+# This is the NEW controller that moves the arm and holds it
+joint_trajectory_controller:
+  type: joint_trajectory_controller/JointTrajectoryController
+  ros__parameters:
+    # This list MUST match your visiona.ros2_control.xacro file
+    joints:
+      - base_link_joint
+      - link_1_shoulder_joint
+      - link_2_elbow_joint
+      - link_3_wrist_joint
+      - link_3_wrist_to_gripper_base_joint
+      - left_finger_joint
+
+    # These are the interfaces the controller will use
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+      - velocity

@@ -8,21 +8,17 @@
                     <mesh filename="package://visiona_bridge/meshes/gripper_joint.stl"
                         scale="0.001 0.001 0.001" />
                 </geometry>
-                <!-- <material name="PLA">
-                    <color rgba="0.0 1.0 0.0 0.5" />
-                    <texture filename="" />
-                </material> -->
             </visual>
-            <collision>
+            <!-- <collision>
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
                     <mesh filename="package://visiona_bridge/meshes/gripper_joint.stl"
                         scale="0.001 0.001 0.001" />
                 </geometry>
-            </collision>
+            </collision> -->
             <inertial>
-                <mass value="0.01" />
-                <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+                <mass value="0.1" />
+                <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
             </inertial>
         </link>
 
@@ -32,32 +28,29 @@
             <xacro:insert_block name="origin_block" />
 
             <axis xyz="0 1 0.0" />
-            <limit lower="-3.0" upper="3.0" effort="0.0" velocity="0.0" />
+            <limit lower="-3.0" upper="3.0" effort="100.0" velocity="10.0" />
+            <!-- <dynamics damping="10" friction="10" /> -->
+
         </joint>
 
         <link name="left_finger_link">
             <visual>
-                <!-- UPDATE THIS: Use the mesh for the left finger/gear -->
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
                     <mesh filename="package://visiona_bridge/meshes/gripper_left_finger.stl"
                         scale="0.001 0.001 0.001" />
                 </geometry>
-                <!-- <material name="PLA">
-                    <color rgba="0.0 1.0 0.0 0.1" />
-                    <texture filename="" />
-                </material> -->
             </visual>
-            <collision>
+            <!-- <collision>
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
                     <mesh filename="package://visiona_bridge/meshes/gripper_left_finger.stl"
                         scale="0.001 0.001 0.001" />
                 </geometry>
-            </collision>
+            </collision> -->
             <inertial>
-                <mass value="0.01" />
-                <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+                <mass value="0.1" />
+                <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
             </inertial>
         </link>
 
@@ -69,33 +62,28 @@
                     <mesh filename="package://visiona_bridge/meshes/gripper_right_finger.stl"
                         scale="0.001 0.001 0.001" />
                 </geometry>
-                <!-- <material name="PLA">
-                    <color rgba="0.0 1.0 0.0 0.1" />
-                    <texture filename="" />
-                </material> -->
             </visual>
-            <collision>
+            <!-- <collision>
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
                     <mesh filename="package://visiona_bridge/meshes/gripper_right_finger.stl"
                         scale="0.001 0.001 0.001" />
                 </geometry>
-            </collision>
+            </collision> -->
             <inertial>
-                <mass value="0.01" />
-                <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+                <mass value="0.1" />
+                <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
             </inertial>
         </link>
 
         <joint name="left_finger_joint" type="revolute">
             <parent link="gripper_base" />
             <child link="left_finger_link" />
-            <!-- Updated origin from your code -->
             <origin xyz="0.0 0.0 0" rpy="0 0 0" />
-            <!-- Updated axis from your code -->
             <axis xyz="0 0 1" />
-            <!-- Updated limits from your code -->
-            <limit lower="-1.0" upper="1" effort="10" velocity="1.0" />
+            <limit lower="-1.0" upper="1" effort="100.0" velocity="10.0" />
+            <!-- <dynamics damping="10" friction="10" /> -->
+
         </joint>
 
         <joint name="right_finger_joint" type="revolute">
@@ -103,9 +91,9 @@
             <child link="right_finger_link" />
             <origin xyz="0 0 0" rpy="0 0 0" />
             <axis xyz="0 0 1" />
-            <limit lower="-1.0" upper="1" effort="10" velocity="1.0" />
+            <limit lower="-1.0" upper="1" effort="100.0" velocity="10.0" />
+            <!-- <dynamics damping="10" friction="10" /> -->
 
-            <!-- THE MAGIC: This tells this joint to mimic the left one, with a -1 multiplier -->
             <mimic joint="left_finger_joint" multiplier="-1" offset="0.0" />
         </joint>
 
