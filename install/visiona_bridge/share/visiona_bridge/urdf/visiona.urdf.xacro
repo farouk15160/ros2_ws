@@ -1,0 +1,205 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="visiona">
+    <xacro:arg name="controller_config_path" default="" />
+    <xacro:include filename="./gripper.xacro" />
+    <link name="world">
+    </link>
+    <link name="base">
+        <inertial>
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+            <mass value="1.0" />
+            <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
+        </inertial>
+        <visual name="base">
+            <origin xyz="0 0 0 " rpy="0 0 0 " />
+            <geometry>
+                <mesh filename="package://visiona_bridge/meshes/base.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+
+        <collision name="base_clyinder">
+            <origin xyz="0 0 0.05 " rpy="0 0 0 " />
+            <geometry>
+                <cylinder length="0.1" radius="0.09" />
+            </geometry>
+        </collision>
+        <collision name="logic_box">
+            <origin xyz="0.18 0 0.05 " rpy="0 0 0 " />
+            <geometry>
+                <box size="0.22 0.21 0.1" />
+            </geometry>
+        </collision>
+        <collision name="foot_1">
+            <origin xyz="-0.12 0 0.012 " rpy="0 0 0 " />
+            <geometry>
+                <box size="0.09 0.08 0.026" />
+            </geometry>
+        </collision>
+        <collision name="foot_2">
+            <origin xyz="0 -0.12  0.012 " rpy="0 0 0 " />
+            <geometry>
+                <box size="0.09 0.08 0.026" />
+            </geometry>
+        </collision>
+        <collision name="foot_3">
+            <origin xyz="0 0.12  0.012 " rpy="0 0 0 " />
+            <geometry>
+                <box size="0.09 0.09 0.026" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="base_link">
+        <inertial>
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+            <mass value="1.0" />
+            <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
+        </inertial>
+        <visual name="base_link">
+            <origin xyz="0 0 0.075 " rpy="0 0 0 " />
+            <geometry>
+                <mesh filename="package://visiona_bridge/meshes/base_link.stl"
+                    scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+
+        <collision>
+            <origin xyz="-0.005 0 0.14 " rpy="0 0 0 " />
+            <geometry>
+                <cylinder length="0.076" radius="0.06" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="link_1_shoulder">
+        <inertial>
+            <origin xyz="0 0 0 " rpy="0.0 0.0 0.0" />
+            <mass value="1.0" />
+            <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
+        </inertial>
+        <visual name="link_1_shoulder">
+            <origin xyz="0 0 0 " rpy="0 0 0 " />
+            <geometry>
+                <mesh filename="package://visiona_bridge/meshes/link_1_shoulder.stl"
+                    scale="0.001 0.001 0.001" />
+            </geometry>
+
+        </visual>
+
+        <collision>
+            <origin xyz="-0.002 0 0.13" rpy="0 0 0 " />
+            <geometry>
+                <box size="0.07 0.07 0.165" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="link_2_elbow">
+        <inertial>
+            <origin xyz="0 0 0 " rpy="0.0 0.0 0.0" />
+            <mass value="1.0" />
+            <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
+        </inertial>
+        <visual name="link_2_elbow">
+            <origin xyz="0 0 0 " rpy="0 0 0 " />
+            <geometry>
+                <mesh filename="package://visiona_bridge/meshes/link_2_elbow.stl"
+                    scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+
+        <collision>
+            <origin xyz="-0.00 0 0.088" rpy="0 0 0 " />
+            <geometry>
+                <box size="0.027 0.06 0.115" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="link_3_wrist">
+        <inertial>
+            <origin xyz="0 0 0 " rpy="0.0 0.0 0.0" />
+            <mass value="1.0" />
+            <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
+        </inertial>
+        <visual name="link_3_wrist">
+            <origin xyz="0 0 0 " rpy="0 0 0 " />
+            <geometry>
+                <mesh filename="package://visiona_bridge/meshes/link_3_wrist.stl"
+                    scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+
+        <collision>
+            <origin xyz="-0.00 0 0.058" rpy="0 0 0 " />
+            <geometry>
+                <box size="0.067 0.06 0.045" />
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="-0.027 0 0.003" rpy="0 0 0 " />
+            <geometry>
+                <box size="0.018 0.06 0.06" />
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.027 0 0.003" rpy="0 0 0 " />
+            <geometry>
+                <box size="0.018 0.06 0.06" />
+            </geometry>
+        </collision>
+    </link>
+
+
+    <joint name="base_joint" type="fixed">
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+        <parent link="world" />
+        <child link="base" />
+        <axis xyz="0.0 0.0 0.0" />
+    </joint>
+
+    <joint name="base_link_joint" type="revolute">
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+        <parent link="base" />
+        <child link="base_link" />
+        <axis xyz="0.0 0 1" />
+        <limit lower="-3.14" upper="3.14" effort="100.0" velocity="10.0" />
+
+        <!-- <dynamics damping="10" friction="10" /> -->
+
+    </joint>
+
+    <joint name="link_1_shoulder_joint" type="revolute">
+        <origin xyz="-0.0055 0 0.134 " rpy="0.0 0.0 0.0" />
+        <parent link="base_link" />
+        <child link="link_1_shoulder" />
+        <axis xyz="1 0 0.0" />
+        <limit lower="-1.52" upper="1.52" effort="100.0" velocity="10.0" />
+        <!-- <dynamics damping="10" friction="10" /> -->
+
+    </joint>
+
+    <joint name="link_2_elbow_joint" type="revolute">
+        <origin xyz="0 0 0.185 " rpy="0 0 3.14" />
+        <parent link="link_1_shoulder" />
+        <child link="link_2_elbow" />
+        <axis xyz="1 0 0.0" />
+        <limit lower="-3.0" upper="3.0" effort="100.0" velocity="10.0" />
+        <!-- <dynamics damping="10" friction="10" /> -->
+
+    </joint>
+
+    <joint name="link_3_wrist_joint" type="revolute">
+        <origin xyz="0 0 0.116 " rpy="0 0 3.14" />
+        <parent link="link_2_elbow" />
+        <child link="link_3_wrist" />
+        <axis xyz="1 0 0.0" />
+        <limit lower="-3.0" upper="3.0" effort="100.0" velocity="10.0" />
+        <!-- <dynamics damping="10" friction="10" /> -->
+
+    </joint>
+
+
+    <xacro:gripper parent_link="link_3_wrist">
+        <origin xyz="0 0 0.082" rpy="1.5707963 0 0" />
+    </xacro:gripper>
+
+    <xacro:include filename="visiona_gazebo.xacro" />
+    <xacro:include filename="visiona.ros2_control.xacro" />
+</robot>

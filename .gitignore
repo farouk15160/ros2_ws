@@ -11,3 +11,5 @@ log/
 *.swp
 *.swo
 *.DS_Store
+
+src/urdf_example

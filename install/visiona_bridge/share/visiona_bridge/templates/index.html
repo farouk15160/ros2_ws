@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Robot Arm Control V4.3 (Fullscreen)</title>
+    <style>
+        :root { --bg-color: #1a1a1d; --panel-color: #2c2f33; --text-color: #c3c3c3; --heading-color: #ffffff; --border-color: #4f545c; --input-bg-color: #23272a; --accent-color: #7289da; --accent-hover: #677bc4; --danger-color: #f04747; --danger-hover: #d84040; --success-color: #43b581; --info-color: #3498db; --warn-color: #f1c40f;}
+        * { box-sizing: border-box; }
+        html, body { width: 100%; min-height: 100%; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; display: flex; flex-direction: column; align-items: center; background-color: var(--bg-color); color: var(--text-color); padding: 20px; }
+        .container { display: flex; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 1400px; }
+        .panel { background-color: var(--panel-color); padding: 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); margin: 10px; }
+        h2 { margin-top: 0; color: var(--heading-color); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        hr { border: none; border-top: 1px solid var(--border-color); margin: 20px 0; }
+        .control-group, .status-item { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 500; }
+        input[type="number"], input[type="text"], input[type="color"], select { width: 80px; text-align: right; border: 1px solid var(--border-color); background-color: var(--input-bg-color); color: var(--text-color); border-radius: 4px; padding: 8px; }
+        input[type="color"] { padding: 4px; height: 38px; }
+        input[type="text"] { text-align: left; width: 150px;}
+        select { width: 180px; text-align: left;}
+        .value-display { font-weight: bold; color: var(--accent-color); margin-left: 10px; }
+        button { background-color: var(--accent-color); color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 1em; font-weight: 500; transition: background-color 0.2s; margin-top: 5px; margin-right: 5px;}
+        button:hover { background-color: var(--accent-hover); }
+        button:disabled { background-color: #555; cursor: not-allowed; opacity: 0.7; }
+        .btn-danger { background-color: var(--danger-color) !important; }
+        .btn-danger:hover { background-color: var(--danger-hover) !important; }
+        .btn-success { background-color: var(--success-color); }
+        .btn-success:hover { background-color: #3aa170; }
+        .btn-warn { background-color: var(--warn-color); color: #333;}
+        .btn-warn:hover { background-color: #d8ae0a;}
+        .btn-reconnect { background-color: var(--warn-color); color: #333; }
+        .btn-reconnect:hover { background-color: #d8ae0a; }
+        .status-value { font-family: 'Courier New', Courier, monospace; background-color: var(--input-bg-color); padding: 5px 8px; border-radius: 4px; border: 1px solid var(--border-color); }
+        .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px;}
+        .status-box { padding: 15px; border-radius: 5px; text-align: center; font-weight: bold; color: white; }
+        .status-ok { background-color: var(--success-color); }
+        .status-warn { background-color: var(--danger-color); }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; align-items: center;}
+        input[type="range"] { -webkit-appearance: none; width: 100%; height: 8px; background: var(--input-bg-color); border-radius: 5px; outline: none; cursor: pointer; border: 1px solid var(--border-color); }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; background: var(--accent-color); border-radius: 50%; cursor: pointer; }
+        #view3d-canvas { display: block; width: 100%; height: 400px; background-color: var(--input-bg-color); border-radius: 5px; cursor: grab; }
+        #view3d-canvas:active { cursor: grabbing; }
+        .sequence-list, .positions-list { max-height: 200px; overflow-y: auto; background-color: var(--input-bg-color); border: 1px solid var(--border-color); border-radius: 4px; padding: 10px; margin-top: 10px; font-family: monospace; font-size: 0.9em;}
+        .sequence-item { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border-color); gap: 10px; }
+        .sequence-item:last-child { border-bottom: none; }
+        .sequence-item span { flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9em; }
+        .sequence-item button { padding: 3px 8px; font-size: 0.8em; flex-shrink: 0;}
+        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #555; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; }
+        input:checked + .slider { background-color: var(--success-color); }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .slider.round { border-radius: 24px; }
+        .slider.round:before { border-radius: 50%; }
+        .calib-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr; gap: 5px 10px; }
+        .calib-grid input { width: 100%; padding: 5px; font-size: 0.9em; }
+        .calib-joint { border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px; }
+        .calib-joint:last-child { border-bottom: none; }
+        .calib-joint label { font-size: 0.9em; color: var(--heading-color); }
+        .calib-headers { font-weight: bold; font-size: 0.8em; }
+        .tab-bar { overflow: hidden; background-color: var(--panel-color); border-radius: 8px; width: 100%; max-width: 1400px; margin-bottom: 10px; }
+        .tab-button { background-color: inherit; float: left; border: none; outline: none; cursor: pointer; padding: 14px 20px; transition: 0.3s; font-size: 1.1em; color: var(--text-color); font-weight: 500; }
+        .tab-button:hover { background-color: var(--border-color); }
+        .tab-button.active { background-color: var(--accent-color); color: white; }
+        .tab-content { width: 100%; max-width: 1400px; }
+        .tab-pane { display: none; width: 100%; animation: 0.5s ease 0s 1 fadeIn; }
+        .tab-pane.active { display: block; }
+        @keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
+        .tab-layout { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 10px; }
+        .tab-layout .panel { margin: 0; }
+        .panel-col-1-3 { flex: 1 1 350px; min-width: 350px; }
+        .panel-col-2-3 { flex: 2 1 600px; min-width: 400px; position: relative; }
+        .panel-full { flex: 1 1 100%; }
+        #log-panel { width: 100%; max-width: 1400px; margin-top: 20px; }
+        #log-box { background-color: var(--input-bg-color); border: 1px solid var(--border-color); border-radius: 5px; height: 150px; overflow-y: scroll; padding: 10px; font-family: monospace; font-size: 0.9em; }
+        #log-box p { margin: 0 0 5px 0; }
+        .log-info { color: var(--info-color); } .log-warn { color: var(--warn-color); } .log-error { color: var(--danger-color); } .log-success { color: var(--success-color); }
+
+        /* --- Fullscreen Canvas --- */
+        #view3d-canvas:fullscreen {
+            width: 100vw; height: 100vh;
+            z-index: 1000;
+            border-radius: 0;
+        }
+        
+        /* --- Jog Overlay --- */
+        #jog-overlay {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(44, 47, 51, 0.8);
+            border-radius: 10px;
+            padding: 15px;
+            display: none; /* Hidden by default */
+            z-index: 1001;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .jog-group { display: flex; flex-direction: column; align-items: center; }
+        .jog-group label { margin: 0 0 5px 0; font-size: 0.9em; color: var(--heading-color); }
+        .jog-buttons { display: flex; gap: 5px; }
+        .jog-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            width: 40px; height: 40px;
+            font-size: 1.5em;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 40px;
+            text-align: center;
+            user-select: none;
+        }
+        .jog-btn:hover { background-color: var(--accent-hover); }
+        .jog-btn:active { transform: scale(0.95); }
+    </style>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+
+    <div class="tab-bar">
+      <button class="tab-button active" onclick="openTab(event, 'tab-control')">🤖 Control</button>
+      <button class="tab-button" onclick="openTab(event, 'tab-sequencer')">📊 Sequencer</button>
+      <button class="tab-button" onclick="openTab(event, 'tab-settings')">⚙️ Settings</button>
+    </div>
+
+    <div class="tab-content">
+    
+        <div id="tab-control" class="tab-pane active">
+            <div class="tab-layout">
+                
+                <div class="panel panel-col-2-3">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h2>3D View</h2>
+                        <button onclick="toggleFullscreen()" style="font-size: 0.9em; padding: 5px 10px;">Toggle Fullscreen</button>
+                    </div>
+                    <canvas id="view3d-canvas"></canvas>
+                </div>
+
+                <div class="panel panel-col-1-3">
+                    <h2>Status</h2>
+                    <div class="status-item">
+                        <label>Connection Status:</label>
+                        <div id="connection-status" class="status-box status-warn">DISCONNECTED</div>
+                        <div class="status-item" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; margin-bottom: 0;">
+                            <label for="sim-mode-toggle" style="margin-bottom: 0;">Simulation Mode:</label>
+                            <label class="switch">
+                                <input type="checkbox" id="sim-mode-toggle" onchange="setSimulationMode()">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <button id="reconnect-btn" class="btn-reconnect" onclick="reconnectMcu()" style="display: block; margin-top: 10px; width: 100%;">Reconnect to MCU</button>
+                    </div>
+                    <div class="status-item">
+                        <label>Emergency Stop:</label>
+                        <div id="estop-status" class="status-box status-warn">INACTIVE</div>
+                        <button id="release-estop-btn" class="btn-danger" onclick="releaseEstop()" style="display: none; margin-top: 10px; width: 100%;">Release E-Stop</button>
+                    </div>
+                    <div class="status-item">
+                        <label>Currents:</label>
+                        <span class="status-value" id="main-current">0.00 A</span> | <span class="status-value" id="gripper-current">0.00 mA</span>
+                    </div>
+                    <div class="status-item">
+                        <label>Current Joint Angles (°):</label>
+                        <div id="joint-status-display" class="status-grid"></div>
+                    </div>
+                </div>
+                
+                <div class="panel panel-col-2-3">
+                    <h2>Controls</h2>
+                    <div id="joint-sliders"></div><hr>
+                    <div class="control-group">
+                        <label for="speed-slider">Speed Factor: <span id="speed-value" class="value-display">150</span></label>
+                        <input type="range" id="speed-slider" min="10" max="500" value="150">
+                    </div><hr>
+                    <div class="control-group">
+                        <label>Gripper Command</label>
+                        <div class="btn-group">
+                            <input type="number" id="gripper-angle-input" placeholder="Angle °" value="90" min="0" max="180">
+                            <input type="number" id="gripper-current-input" placeholder="Current mA" value="200" min="0">
+                            <button onclick="sendGripperCommand()">Set Gripper</button>
+                        </div>
+                    </div><hr>
+                    <div class="control-group">
+                        <label for="fan-speed-slider">Fan Control (Duty Cycle): <span id="fan-speed-value" class="value-display">18</span></label>
+                        <input type="range" id="fan-speed-slider" min="0" max="255" value="18">
+                    </div><hr>
+                    <div class="control-group"><button onclick="sendHomeCommand()">Home Robot</button></div>
+                </div>
+                
+                <div class="panel panel-col-1-3">
+                    <h2>Saved Positions</h2>
+                     <div class="control-group">
+                         <label for="position-name">Position Name:</label>
+                         <div class="btn-group">
+                            <input type="text" id="position-name" placeholder="Enter name...">
+                            <button onclick="savePosition()" class="btn-success">Save Current</button>
+                         </div>
+                    </div>
+                     <div class="control-group">
+                        <label for="saved-positions-select">Go To / Delete:</label>
+                         <div class="btn-group">
+                            <select id="saved-positions-select">
+                                <option value="">-- Select Position --</option>
+                                </select>
+                            <button id="go-to-pos-btn" onclick="goToPosition()">Go To</button>
+                            <button id="delete-pos-btn" onclick="deletePosition()" class="btn-danger">Delete</button>
+                         </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="tab-sequencer" class="tab-pane">
+            <div class="tab-layout">
+                <div class="panel panel-full">
+                    <h2>Sequencer</h2>
+                    <div class="control-group">
+                        <label for="sequence-delay">Delay After Point (ms):</label>
+                         <div class="btn-group">
+                            <input type="number" id="sequence-delay" value="500" min="0" step="50" style="width: 100px;">
+                            <button onclick="addSequencePoint()">Add Current Pose</button>
+                         </div>
+                    </div>
+                    <div class="control-group">
+                        <label>Sequence Steps:</label>
+                        <div id="sequence-list" class="sequence-list">
+                            </div>
+                    </div>
+                    <div class="control-group btn-group">
+                        <button id="play-sequence-btn" onclick="playSequence()">Play</button>
+                        <button id="stop-sequence-btn" onclick="stopSequence()" disabled>Stop</button>
+                        <button onclick="clearSequence()" class="btn-danger">Clear</button>
+                    </div>
+                    <hr>
+                     <div class="control-group">
+                        <label for="sequence-filename">Filename:</label>
+                         <div class="btn-group">
+                            <input type="text" id="sequence-filename" placeholder="current_sequence.json">
+                            <button onclick="saveSequence()" class="btn-success">Save</button>
+                            <button onclick="loadSequence()" class="btn-warn">Load</button>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-settings" class="tab-pane">
+            <div class="tab-layout">
+                
+                <div class="panel panel-col-1-3">
+                    <h2>Configuration</h2>
+                    <div class="control-group">
+                        <label for="threshold-input">Absolute Max Threshold (A)</label>
+                        <div class="btn-group">
+                            <input type="number" id="threshold-input" value="5.0" step="0.1" min="0.1" max="20.0">
+                            <button onclick="sendThreshold()">Set RAM</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label for="dev-threshold-input">Deviation Threshold (A)</label>
+                        <div class="btn-group">
+                            <input type="number" id="dev-threshold-input" value="1.0" step="0.05" min="0.05" max="10.0">
+                            <button onclick="sendDevThreshold()">Set RAM</button>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="control-group">
+                        <label>Joint Angle Limits (°)</label>
+                        <div id="limit-config-grid" class="config-grid">
+                            <div class="grid-header">Joint</div><div class="grid-header">Min</div><div class="grid-header">Max</div>
+                            </div>
+                        <div class="btn-group" style="margin-top: 15px;">
+                            <button onclick="sendMinLimits()">Set Min (RAM)</button>
+                            <button onclick="sendMaxLimits()">Set Max (RAM)</button>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="control-group">
+                        <label>Persistence</label>
+                        <button onclick="saveMcuConfig()" class="btn-success">Save Current Config to MCU</button>
+                    </div>
+                    <hr>
+                    <h2>Scene</h2>
+                    <div class="control-group" style="display: flex; justify-content: space-between; align-items: center;">
+                        <label for="scene-grid-toggle" style="margin-bottom: 0;">Show Grid:</label>
+                        <label class="switch">
+                            <input type="checkbox" id="scene-grid-toggle" checked onchange="reload3DModel()">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="control-group" style="display: flex; justify-content: space-between; align-items: center;">
+                        <label for="scene-bg-color" style="margin-bottom: 0;">Background Color:</label>
+                        <input type="color" id="scene-bg-color" value="#283040" onchange="reload3DModel()">
+                    </div>
+                </div>
+                
+                <div class="panel panel-col-2-3">
+                    <h2>3D Model Calibration (Visual Offsets)</h2>
+                    <div id="calibration-inputs">
+                        </div>
+                    <div class="btn-group" style="margin-top: 15px;">
+                        <button onclick="reload3DModel()" class="btn-success">Apply & Reload 3D Model</button>
+                        <button onclick="saveOffsetsToConsole()" class="btn-warn">Save Offsets to Console</button>
+                        <button onclick="loadOffsetsFromGUI()">Load Offsets from Prompt</button>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        
+    </div> 
+    
+    <div class="panel" id="log-panel">
+        <h2>Event Log</h2>
+        <div id="log-box"></div>
+    </div>
+    
+    <div id="jog-overlay">
+        </div>
+    
+    
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+<script>
+    // --- (JavaScript: Globals) ---
+    const JOINT_NAMES = ['Base', 'Shoulder', 'Elbow', 'Wrist 1', 'Wrist 2', 'Gripper'];
+    let jointSliderTimeout = null, speedSliderTimeout = null, fanSliderTimeout = null;
+    let activeSlider = null, activeInput = null;
+    let isGuiInitialized = false;
+    let isPlayingSequence = false;
+    let jogInterval = null;
+    let jogStep = 1.0; // degrees per jog tick
+    window.updateRobotModel = (anglesRad) => {}; // Placeholder
+    let socket = null; 
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeGui();
+        connectWebSocket();
+        document.addEventListener('fullscreenchange', onFullscreenChange);
+    });
+
+    // --- Tab switching function ---
+    function openTab(evt, tabName) {
+      let i, tabcontent, tablinks;
+      tabcontent = document.getElementsByClassName("tab-pane");
+      for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+      }
+      tablinks = document.getElementsByClassName("tab-button");
+      for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+      }
+      document.getElementById(tabName).style.display = "block";
+      if (evt) evt.currentTarget.className += " active";
+    }
+
+     function connectWebSocket() {
+         if (socket && socket.connected) return; 
+         console.log("Attempting WebSocket connection...");
+         if (socket) {
+             socket.disconnect();
+             socket = null;
+         }
+         socket = io({
+             transports: ['websocket'], 
+             reconnectionAttempts: 5,
+             reconnectionDelay: 2000
+         });
+         socket.on('connect', () => {
+             console.log("WebSocket connected.");
+             logMessage('success', 'Connected to WebSocket server.');
+         });
+         socket.on('disconnect', (reason) => {
+             console.log("WebSocket disconnected:", reason);
+             logMessage('error', `Disconnected from WebSocket server (${reason})`);
+             updateStatusUI({ is_connected: false, emergency_stop_active: false, is_playing: false, simulation_mode: false });
+         });
+         socket.on('connect_error', (error) => {
+            console.error('WebSocket connection error:', error);
+            logMessage('error', `WebSocket connection error: ${error.message}`);
+         });
+         socket.on('status_update', (data) => {
+             updateStatusUI(data);
+         });
+         socket.on('log_message', (data) => logMessage(data.level, data.message));
+         socket.on('playback_stopped', () => {
+             console.log("Received playback_stopped event");
+             isPlayingSequence = false;
+             updateStatusUI(); // Refresh UI to re-enable buttons
+         });
+     }
+
+    // --- initializeGui (FIXED) ---
+    function initializeGui() {
+        if (isGuiInitialized) return;
+        
+        const slidersContainer = document.getElementById('joint-sliders');
+        const statusContainer = document.getElementById('joint-status-display');
+        const limitsContainer = document.getElementById('limit-config-grid');
+        const jogOverlay = document.getElementById('jog-overlay');
+        
+        ['threshold-input', 'dev-threshold-input', 'gripper-angle-input', 'gripper-current-input', 'sequence-delay', 'position-name', 'sequence-filename'].forEach(id => {
+            const input = document.getElementById(id);
+            if(input) { input.addEventListener('focus', () => activeInput = id); input.addEventListener('blur', () => { if (activeInput === id) activeInput = null; }); }
+        });
+        
+        JOINT_NAMES.forEach((name, i) => {
+            slidersContainer.innerHTML += `<div class="control-group"><label for="j${i}">${name} (J${i}): <span id="j${i}-value" class="value-display">90</span>°</label><input type="range" id="j${i}" value="90"></div>`;
+            statusContainer.innerHTML += `<div>${name}: <span id="s${i}" class="status-value">0.00</span></div>`;
+            limitsContainer.innerHTML += `<label for="min-j${i}">J${i}:</label><input type="number" id="min-j${i}" value="0"><input type="number" id="max-j${i}" value="180">`;
+            jogOverlay.innerHTML += `
+                <div class="jog-group">
+                    <label>J${i} (${name})</label>
+                    <div class="jog-buttons">
+                        <div class="jog-btn" onmousedown="startJog(${i}, -1)" onmouseup="stopJog()" onmouseleave="stopJog()">-</div>
+                        <div class="jog-btn" onmousedown="startJog(${i}, 1)" onmouseup="stopJog()" onmouseleave="stopJog()">+</div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        JOINT_NAMES.forEach((_, i) => {
+            const slider = document.getElementById(`j${i}`);
+            slider.addEventListener('input', (e) => { document.getElementById(`j${i}-value`).textContent = e.target.value; sendJointCommandDebounced(); });
+            slider.addEventListener('mousedown', () => activeSlider = slider.id);
+            document.addEventListener('mouseup', () => { if (activeSlider === slider.id) activeSlider = null; });
+            const minInput = document.getElementById(`min-j${i}`); minInput.addEventListener('focus', () => activeInput = minInput.id); minInput.addEventListener('blur', () => { if (activeInput === minInput.id) activeInput = null; });
+            const maxInput = document.getElementById(`max-j${i}`); maxInput.addEventListener('focus', () => activeInput = maxInput.id); maxInput.addEventListener('blur', () => { if (activeInput === maxInput.id) activeInput = null; });
+        });
+        
+        document.addEventListener('mouseup', () => {
+            activeSlider = null;
+            stopJog();
+        });
+        
+        const speedSlider = document.getElementById('speed-slider');
+        speedSlider.addEventListener('input', e => { document.getElementById('speed-value').textContent = e.target.value; setSpeedDebounced(); });
+        speedSlider.addEventListener('mousedown', () => activeSlider = speedSlider.id);
+        
+        const fanSlider = document.getElementById('fan-speed-slider');
+        fanSlider.addEventListener('input', e => { document.getElementById('fan-speed-value').textContent = e.target.value; setFanSpeedDebounced(); });
+        fanSlider.addEventListener('mousedown', () => activeSlider = fanSlider.id);
+        
+        isGuiInitialized = true;
+        console.log("GUI Initialized");
+        
+        // --- Populate calibration inputs *ONCE* here ---
+        if (window.populateCalibrationInputs) {
+            // --- FIX: Pass the hard-coded config to the populator ---
+            window.populateCalibrationInputs(window.DEFAULT_JOINT_CONFIG || []);
+        } else {
+            console.error("populateCalibrationInputs not found");
+        }
+        
+        // Initialize 3D view
+        if(window.init3D) {
+            window.init3D();
+        } else {
+            console.error("init3D not found on window. Is the module script loaded?");
+        }
+        
+        updateStatusUI(); 
+        openTab(null, 'tab-control');
+    }
+
+    const logMessage = (level, message) => { const logBox = document.getElementById('log-box'); if (!logBox) return; const timestamp = new Date().toLocaleTimeString(); const p = document.createElement('p'); p.className = `log-${level}`; p.textContent = `[${timestamp}] ${message}`; logBox.appendChild(p); logBox.scrollTop = logBox.scrollHeight; };
+    const apiPost = async (endpoint, body = {}) => {
+         try {
+             const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+             if (!response.ok) {
+                 logMessage('error', `API Request Failed: ${endpoint} - ${response.status} ${response.statusText}`);
+                 console.error('API Error Response:', await response.text().catch(()=>"Could not read error body"));
+             }
+         } catch (error) {
+             console.error('API Post Error:', error);
+             logMessage('error', `API Request Failed: ${endpoint} - ${error.message}`);
+         }
+     };
+
+    const sendJointCommandDebounced = () => { if(isPlayingSequence) return; clearTimeout(jointSliderTimeout); jointSliderTimeout = setTimeout(sendAllJoints, 50); };
+    const setSpeedDebounced = () => { clearTimeout(speedSliderTimeout); speedSliderTimeout = setTimeout(setSpeed, 100); };
+    const setFanSpeedDebounced = () => { clearTimeout(fanSliderTimeout); fanSliderTimeout = setTimeout(setFanSpeed, 100); };
+
+    const sendAllJoints = () => { 
+        if(isPlayingSequence) return; 
+        const angles = JOINT_NAMES.map((_, i) => parseFloat(document.getElementById(`j${i}`).value)); 
+        apiPost('/api/send_joints', { angles }); 
+    };
+    
+    const sendHomeCommand = () => apiPost('/api/home');
+    const sendGripperCommand = () => { const angle = parseFloat(document.getElementById('gripper-angle-input').value); const current = parseFloat(document.getElementById('gripper-current-input').value); apiPost('/api/send_gripper', { angle, current }); };
+    const setSpeed = () => { const speed = parseFloat(document.getElementById('speed-slider').value); apiPost('/api/set_speed', { speed }); };
+    const setFanSpeed = () => { const speed = parseFloat(document.getElementById('fan-speed-slider').value); apiPost('/api/set_fan_speed', { speed }); };
+    const sendMinLimits = () => { const limits = JOINT_NAMES.map((_, i) => parseFloat(document.getElementById(`min-j${i}`).value)); apiPost('/api/set_min_limits', { limits }); };
+    const sendMaxLimits = () => { const limits = JOINT_NAMES.map((_, i) => parseFloat(document.getElementById(`max-j${i}`).value)); apiPost('/api/set_max_limits', { limits }); };
+    const sendThreshold = () => { const threshold = parseFloat(document.getElementById('threshold-input').value); apiPost('/api/set_threshold', { threshold }); };
+    const sendDevThreshold = () => { const threshold = parseFloat(document.getElementById('dev-threshold-input').value); apiPost('/api/set_dev_threshold', { threshold }); };
+    const saveMcuConfig = () => apiPost('/api/save_mcu_config');
+    const releaseEstop = () => apiPost('/api/release_estop');
+    const reconnectMcu = () => apiPost('/api/reconnect');
+    const addSequencePoint = () => { const delay = parseInt(document.getElementById('sequence-delay').value); apiPost('/api/add_sequence_point', { delay_ms: delay }); };
+    const clearSequence = () => { if(confirm("Clear the entire sequence?")) apiPost('/api/clear_sequence'); };
+    const deleteSequencePoint = (index) => apiPost('/api/delete_sequence_point', { index });
+    const saveSequence = () => { const filename = document.getElementById('sequence-filename').value || null; apiPost('/api/save_sequence', { filename }); };
+    const loadSequence = () => { const filename = document.getElementById('sequence-filename').value || null; apiPost('/api/load_sequence', { filename }); };
+    const playSequence = () => apiPost('/api/play_sequence');
+    const stopSequence = () => apiPost('/api/stop_sequence');
+    const savePosition = () => { const name = document.getElementById('position-name').value; if (name && name.trim()) { apiPost('/api/save_position', { name: name.trim() }); } else { logMessage('warn', 'Please enter a name for the position.'); } };
+    const goToPosition = () => { const name = document.getElementById('saved-positions-select').value; if (name) { apiPost('/api/go_to_position', { name }); } else { logMessage('warn', 'Please select a position to go to.'); } };
+    const deletePosition = () => { const name = document.getElementById('saved-positions-select').value; if (name) { if (confirm(`Delete position '${name}'?`)) { apiPost('/api/delete_position', { name }); } } else { logMessage('warn', 'Please select a position to delete.'); } };
+    const setSimulationMode = () => {
+        const enable = document.getElementById('sim-mode-toggle').checked;
+        apiPost('/api/set_simulation_mode', { enable });
+        logMessage(enable ? 'warn' : 'info', `Simulation mode ${enable ? 'ENABLED' : 'DISABLED'}.`);
+    };
+
+    // --- Fullscreen and Jog Functions ---
+    function toggleFullscreen() {
+        const canvas = document.getElementById('view3d-canvas');
+        if (!canvas) {
+            logMessage('error', 'Canvas element not found for fullscreen.');
+            return;
+        }
+
+        if (!document.fullscreenElement) {
+            canvas.requestFullscreen().catch(err => {
+                logMessage('error', `Fullscreen error: ${err.message}`);
+            });
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    }
+    
+    function onFullscreenChange() {
+        const jogOverlay = document.getElementById('jog-overlay');
+        if (document.fullscreenElement) {
+            jogOverlay.style.display = 'flex'; // Show jog buttons
+        } else {
+            jogOverlay.style.display = 'none'; // Hide jog buttons
+        }
+        
+        if (window.init3D) {
+            setTimeout(window.init3D, 100); 
+        }
+    }
+
+    window.startJog = function(jointIndex, direction) {
+        if (jogInterval) clearInterval(jogInterval);
+        
+        function jog() {
+            const slider = document.getElementById(`j${jointIndex}`);
+            if (!slider || slider.disabled) {
+                stopJog();
+                return;
+            }
+            let value = parseFloat(slider.value);
+            value += (direction * jogStep);
+            value = Math.max(parseFloat(slider.min), Math.min(parseFloat(slider.max), value));
+            slider.value = value;
+            
+            const valueEl = document.getElementById(`j${jointIndex}-value`);
+            if(valueEl) valueEl.textContent = Math.round(value);
+            
+            sendAllJoints();
+        }
+        
+        jog();
+        jogInterval = setInterval(jog, 100);
+    }
+
+    window.stopJog = function() {
+        if (jogInterval) {
+            clearInterval(jogInterval);
+            jogInterval = null;
+        }
+    }
+
+    // --- updateStatusUI ---
+    function updateStatusUI(data) {
+        if (!isGuiInitialized) { console.warn("GUI not ready for update"); return; }
+        data = data || { is_connected: false, emergency_stop_active: false, is_playing: false, joint_angles: null, sequence: [], saved_positions: [], simulation_mode: false };
+        const isSimMode = data.simulation_mode === true;
+        const simToggle = document.getElementById('sim-mode-toggle');
+        if (simToggle && simToggle.checked !== isSimMode) {
+             simToggle.checked = isSimMode;
+        }
+        const connStatus = document.getElementById('connection-status');
+        const reconnectBtn = document.getElementById('reconnect-btn');
+        const isConnected = data.is_connected === true;
+        if (connStatus) {
+            if (isSimMode) {
+                connStatus.textContent = 'SIMULATION ACTIVE';
+                connStatus.className = 'status-box status-ok';
+            } else {
+                connStatus.textContent = isConnected ? 'MCU CONNECTED' : 'MCU DISCONNECTED';
+                connStatus.className = 'status-box ' + (isConnected ? 'status-ok' : 'status-warn');
+            }
+        }
+        if (reconnectBtn) reconnectBtn.style.display = (isConnected || isSimMode) ? 'none' : 'block';
+        const estopStatus = document.getElementById('estop-status');
+        const releaseBtn = document.getElementById('release-estop-btn');
+        const isEstopActive = data.emergency_stop_active === true;
+        if (estopStatus) { estopStatus.textContent = isEstopActive ? 'ACTIVE' : 'INACTIVE'; estopStatus.className = 'status-box ' + (isEstopActive ? 'status-warn' : 'status-ok'); }
+        if (releaseBtn) {
+             releaseBtn.style.display = isEstopActive ? 'block' : 'none';
+             releaseBtn.disabled = !isConnected && !isSimMode;
+        }
+        isPlayingSequence = data.is_playing === true;
+        const playBtn = document.getElementById('play-sequence-btn');
+        const stopBtn = document.getElementById('stop-sequence-btn');
+        const goToPosBtn = document.getElementById('go-to-pos-btn');
+        const deletePosBtn = document.getElementById('delete-pos-btn');
+        const isControlDisabled = isPlayingSequence || isEstopActive || (!isConnected && !isSimMode);
+        if(playBtn) playBtn.disabled = isControlDisabled;
+        if(stopBtn) stopBtn.disabled = !isPlayingSequence;
+        if(goToPosBtn) goToPosBtn.disabled = isControlDisabled;
+        if(deletePosBtn) deletePosBtn.disabled = isControlDisabled || !document.getElementById('saved-positions-select').value;
+        JOINT_NAMES.forEach((_, i) => {
+             const sliderEl = document.getElementById(`j${i}`);
+             if (sliderEl) sliderEl.disabled = isControlDisabled;
+        });
+        if(simToggle) simToggle.disabled = isPlayingSequence;
+        const mainCurrentEl = document.getElementById('main-current');
+        const gripperCurrentEl = document.getElementById('gripper-current');
+        if (isConnected || isSimMode) {
+            if(mainCurrentEl) mainCurrentEl.textContent = `${(data.main_current ?? 0).toFixed(2)} A`;
+            if(gripperCurrentEl) gripperCurrentEl.textContent = `${(data.gripper_current ?? 0).toFixed(2)} mA`;
+            if (data.joint_angles && data.joint_angles.length === 6) {
+                const anglesRad = data.joint_angles.map(deg => deg * Math.PI / 180.0);
+                window.updateRobotModel(anglesRad);
+                data.joint_angles.forEach((angle, i) => {
+                    const sliderId = `j${i}`;
+                    const statusEl = document.getElementById(`s${i}`);
+                    const sliderEl = document.getElementById(sliderId);
+                    const valueEl = document.getElementById(`${sliderId}-value`);
+                    if(statusEl) statusEl.textContent = angle.toFixed(1);
+                    if (sliderEl && activeSlider !== sliderId && !isPlayingSequence) {
+                        if (Math.abs(sliderEl.value - angle) > 0.5) {
+                            sliderEl.value = angle;
+                        }
+                        if(valueEl) valueEl.textContent = Math.round(angle);
+                    } else if (sliderEl && valueEl && activeSlider === sliderId) {
+                         valueEl.textContent = sliderEl.value;
+                    }
+                });
+            } else if (data.joint_angles === null) {
+                JOINT_NAMES.forEach((_, i) => { const statusEl = document.getElementById(`s${i}`); if(statusEl) statusEl.textContent = '---'; });
+            }
+            const thresholdEl = document.getElementById('threshold-input');
+            if (thresholdEl && data.collision_threshold !== undefined && activeInput !== 'threshold-input') { thresholdEl.value = data.collision_threshold.toFixed(2); }
+            const devThresholdEl = document.getElementById('dev-threshold-input');
+            if (devThresholdEl && data.collision_deviation_threshold !== undefined && activeInput !== 'dev-threshold-input') { devThresholdEl.value = data.collision_deviation_threshold.toFixed(2); }
+            const fanSliderEl = document.getElementById('fan-speed-slider');
+            const fanValueEl = document.getElementById('fan-speed-value');
+            if (fanSliderEl && data.fan_speed !== undefined && activeSlider !== 'fan-speed-slider') { fanSliderEl.value = data.fan_speed; if(fanValueEl) fanValueEl.textContent = data.fan_speed; }
+            const speedSliderEl = document.getElementById('speed-slider');
+            const speedValueEl = document.getElementById('speed-value');
+             if (speedSliderEl && data.current_speed_factor !== undefined && activeSlider !== 'speed-slider') { speedSliderEl.value = data.current_speed_factor; if(speedValueEl) speedValueEl.textContent = Math.round(data.current_speed_factor); }
+             if (data.servos_min) { data.servos_min.forEach((min_val, i) => { const minInputEl = document.getElementById(`min-j${i}`); const sliderEl = document.getElementById(`j${i}`); if (minInputEl && activeInput !== `min-j${i}`) { minInputEl.value = min_val.toFixed(1); } if (sliderEl) sliderEl.min = min_val; }); }
+             if (data.servos_max) { data.servos_max.forEach((max_val, i) => { const maxInputEl = document.getElementById(`max-j${i}`); const sliderEl = document.getElementById(`j${i}`); if (maxInputEl && activeInput !== `max-j${i}`) { maxInputEl.value = max_val.toFixed(1); } if (sliderEl) sliderEl.max = max_val; }); }
+        } else { 
+            if(mainCurrentEl) mainCurrentEl.textContent = `--- A`;
+            if(gripperCurrentEl) gripperCurrentEl.textContent = `--- mA`;
+            JOINT_NAMES.forEach((_, i) => { const statusEl = document.getElementById(`s${i}`); if(statusEl) statusEl.textContent = '---'; });
+        }
+        const sequenceList = document.getElementById('sequence-list');
+        if (sequenceList) {
+            sequenceList.innerHTML = '';
+            if (data.sequence && Array.isArray(data.sequence) && data.sequence.length > 0) {
+                data.sequence.forEach((point, index) => {
+                    const anglesStr = point.angles.map(a => a.toFixed(1)).join(',');
+                    const item = document.createElement('div');
+                    item.className = 'sequence-item';
+                    item.innerHTML = `
+                        <span>${index + 1}: [${anglesStr}] Spd:${point.speed.toFixed(0)} Del:${point.delay_ms}ms</span>
+                        <button onclick="deleteSequencePoint(${index})" class="btn-danger" ${isControlDisabled ? 'disabled' : ''}>X</button> `;
+                    sequenceList.appendChild(item);
+                });
+            } else {
+                 sequenceList.innerHTML = '<span>Sequence is empty.</span>';
+            }
+        }
+        const positionsSelect = document.getElementById('saved-positions-select');
+        if (positionsSelect && deletePosBtn) {
+             const currentSelection = positionsSelect.value;
+            positionsSelect.innerHTML = '<option value="">-- Select Position --</option>';
+            let selectionFound = false;
+            if (data.saved_positions && Array.isArray(data.saved_positions)) {
+                 data.saved_positions.sort().forEach(name => {
+                     const option = document.createElement('option');
+                     option.value = name;
+                     option.textContent = name;
+                     if(name === currentSelection) {
+                         option.selected = true;
+                         selectionFound = true;
+                     }
+                     positionsSelect.appendChild(option);
+                 });
+            }
+            deletePosBtn.disabled = isControlDisabled || !selectionFound;
+        }
+    }
+
+    // --- Calibration Functions ---
+    window.populateCalibrationInputs = function(defaultConfig) {
+        const container = document.getElementById('calibration-inputs');
+        if (!container) return;
+        if (container.innerHTML.trim() !== "") return;
+        
+        container.innerHTML = `
+            <div class="calib-grid calib-headers">
+                <div>Joint</div> <div>Pos X (m)</div> <div>Pos Y (m)</div> <div>Pos Z (m)</div>
+                <div>Rot R (°)</div> <div>Rot P (°)</div> <div>Rot Y (°)</div>
+            </div>
+        `;
+        // --- FIX: Use the passed-in default_config ---
+        defaultConfig.forEach((config, i) => {
+            const jointName = JOINT_NAMES[i] || `Joint ${i}`;
+            const stlName = config.file || 'N/A';
+            // --- FIX: Use the hard-coded offsets ---
+            const [posX, posY, posZ] = config.stl_offset;
+            const [rotR, rotP, rotY] = config.stl_rot;
+            const jointEl = document.createElement('div');
+            jointEl.className = 'calib-joint';
+            jointEl.innerHTML = `
+                <label>J${i}: ${jointName} (${stlName})</label>
+                <div class="calib-grid">
+                    <input type="text" id="j${i}_file" value="${stlName}" style="display: none;" />
+                    <input type="number" step="0.001" id="j${i}_pos_x" value="${posX}">
+                    <input type="number" step="0.001" id="j${i}_pos_y" value="${posY}">
+                    <input type="number" step="0.001" id="j${i}_pos_z" value="${posZ}">
+                    <input type="number" step="1" id="j${i}_rot_r" value="${rotR}">
+                    <input type="number" step="1" id="j${i}_rot_p" value="${rotP}">
+                    <input type="number" step="1" id="j${i}_rot_y" value="${rotY}">
+                </div>
+            `;
+            container.appendChild(jointEl);
+        });
+    }
+
+    window.reload3DModel = function() {
+        logMessage('info', 'Reloading 3D model with new offsets...');
+        if (window.init3D) {
+            window.init3D();
+        } else {
+            logMessage('error', 'init3D function not found. Cannot reload model.');
+        }
+    }
+
+    window.saveOffsetsToConsole = function() {
+        try {
+            const newConfig = [];
+            JOINT_NAMES.forEach((_, i) => {
+                const file = document.getElementById(`j${i}_file`).value;
+                const posX = parseFloat(document.getElementById(`j${i}_pos_x`).value);
+                const posY = parseFloat(document.getElementById(`j${i}_pos_y`).value);
+                const posZ = parseFloat(document.getElementById(`j${i}_pos_z`).value);
+                const rotR = parseFloat(document.getElementById(`j${i}_rot_r`).value);
+                const rotP = parseFloat(document.getElementById(`j${i}_rot_p`).value);
+                const rotY = parseFloat(document.getElementById(`j${i}_rot_y`).value);
+                newConfig.push({
+                    // --- FIX: Save kinematic data too for a complete config ---
+                    offset: window.DEFAULT_JOINT_CONFIG[i].offset,
+                    axis: window.DEFAULT_JOINT_CONFIG[i].axis,
+                    joint_rot: window.DEFAULT_JOINT_CONFIG[i].joint_rot,
+                    file: file,
+                    stl_offset: [posX, posY, posZ],
+                    stl_rot: [rotR, rotP, rotY]
+                });
+            });
+            console.log("--- Copy this JSON to save your 3D model offsets ---");
+            console.log(JSON.stringify(newConfig, null, 2));
+            logMessage('success', 'Offsets config saved to browser console (F12).');
+        } catch (e) {
+            logMessage('error', `Failed to save offsets: ${e.message}`);
+            console.error(e);
+        }
+    }
+
+    window.loadOffsetsFromGUI = function() {
+        try {
+            const jsonString = prompt("Paste your saved 3D model offsets JSON here:");
+            if (!jsonString) return;
+            const newConfig = JSON.parse(jsonString);
+            if (!Array.isArray(newConfig) || newConfig.length < 6) {
+                throw new Error("Invalid config. Must be an array of at least 6 joint objects.");
+            }
+            newConfig.forEach((config, i) => {
+                if(i >= JOINT_NAMES.length) return;
+                // --- FIX: Update the hard-coded config in memory ---
+                window.DEFAULT_JOINT_CONFIG[i] = { ...window.DEFAULT_JOINT_CONFIG[i], ...config };
+                
+                // --- FIX: Update the GUI fields ---
+                document.getElementById(`j${i}_file`).value = config.file;
+                document.getElementById(`j${i}_pos_x`).value = config.stl_offset[0];
+                document.getElementById(`j${i}_pos_y`).value = config.stl_offset[1];
+                document.getElementById(`j${i}_pos_z`).value = config.stl_offset[2];
+                document.getElementById(`j${i}_rot_r`).value = config.stl_rot[0];
+                document.getElementById(`j${i}_rot_p`).value = config.stl_rot[1];
+                document.getElementById(`j${i}_rot_y`).value = config.stl_rot[2];
+            });
+            logMessage('success', 'Offsets loaded. Reloading 3D model...');
+            reload3DModel();
+        } catch (e) {
+            logMessage('error', `Failed to load offsets: ${e.message}`);
+            console.error(e);
+        }
+    }
+
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+
+    let scene, camera, renderer, controls, gridHelper;
+    const robotJoints = [];
+    const stl_loader = new STLLoader();
+
+    // --- FIX: Updated materials ---
+    const linkMaterial = new THREE.MeshStandardMaterial({ color: 0x7289da, metalness: 0.5, roughness: 0.4 });
+    const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x3a3f44, metalness: 0.7, roughness: 0.3 });
+    const gripperMaterial = new THREE.MeshStandardMaterial({ color: 0xc3c3c3, metalness: 0.8, roughness: 0.2 });
+
+    // --- FIX: Hard-coded config with user's values (converted from mm to meters) ---
+    window.DEFAULT_JOINT_CONFIG = [
+        { 
+            offset: [0, 0, 0], axis: 'z', file: 'base_link.stl', 
+            stl_offset: [0.0, 0.0, 0.0], stl_rot: [0, 0, 0] 
+        },
+        { 
+            offset: [0,0,0.076], axis: 'x', file: 'link_shoulder.stl', 
+            stl_offset: [0.038, 0.01, 0.16], stl_rot: [0, 180, 0] 
+        },
+        { 
+            offset: [0.0145, 0, 0.07], axis: 'x', file: 'link_elbow.stl', 
+            stl_offset: [0.0055, -0.045, 0.385], stl_rot: [0, 0, 0] 
+        },
+        { 
+            offset: [-0.033, 0, 0.18], axis: 'x', file: null, 
+            stl_offset: [0.0, 0.0, 0.0], stl_rot: [0, 0, 0], 
+            joint_rot: [-Math.PI/2, 0, 0] 
+        },
+        { 
+            offset: [0.029, 0, 0.117], axis: 'y', file: 'link_4_wrist.stl', 
+            stl_offset: [0.078, 0.39, 0.055], stl_rot: [0, 180, 0], 
+            joint_rot: [Math.PI, 0, 0] 
+        },
+        { 
+            offset: [-0.018, 0, -0.12], axis: 'z', file: 'gripper_joint.stl', 
+            stl_offset: [0.07, 0.37, 0.225], stl_rot: [90, 0, 0] 
+        }
+    ];
+
+    function cleanup3D() {
+        if (scene) {
+            while(scene.children.length > 0) { 
+                const child = scene.children[0];
+                scene.remove(child); 
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(m => m.dispose());
+                    } else {
+                        child.material.dispose();
+                    }
+                }
+            }
+        }
+        if (controls) {
+            controls.dispose();
+            controls = null;
+        }
+        robotJoints.length = 0;
+    }
+
+    // --- init3D (FIX: Enhanced Scene) ---
+    window.init3D = function() {
+        let canvas = document.getElementById('view3d-canvas');
+        if (!canvas) { console.error("3D canvas not found!"); return; }
+
+        cleanup3D(); 
+        
+        const showGrid = document.getElementById('scene-grid-toggle')?.checked ?? true;
+        const bgColor = document.getElementById('scene-bg-color')?.value ?? '#283040';
+
+        if (!scene) {
+            scene = new THREE.Scene();
+        }
+        
+        if (!renderer) {
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            // --- FIX: Add tone mapping for better visuals ---
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
+        }
+        
+        const isFullscreen = document.fullscreenElement === canvas;
+        const width = isFullscreen ? window.innerWidth : canvas.clientWidth;
+        const height = isFullscreen ? window.innerHeight : canvas.clientHeight;
+        
+        renderer.setSize(width, height, false); 
+        
+        if (!camera) {
+            camera = new THREE.PerspectiveCamera(50, width / height, 0.01, 1000);
+            camera.position.set(0.7, -0.7, 0.6);
+            camera.up.set(0, 0, 1);
+            camera.lookAt(0, 0, 0.2);
+        }
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+
+        scene.background = new THREE.Color(bgColor);
+
+        // --- FIX: Improved lighting ---
+        const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.5);
+        hemisphereLight.position.set(0, 0, 1);
+        scene.add(hemisphereLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0);
+        directionalLight.position.set(2, -3, 5);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 1024;
+        directionalLight.shadow.mapSize.height = 1024;
+        directionalLight.shadow.camera.near = 0.5;
+        directionalLight.shadow.camera.far = 50;
+        scene.add(directionalLight);
+        
+        // --- FIX: Larger, darker plane ---
+        const plane = new THREE.Mesh( 
+            new THREE.PlaneGeometry(20, 20), 
+            new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 }) 
+        ); 
+        plane.receiveShadow = true; 
+        scene.add(plane);
+        
+        gridHelper = new THREE.GridHelper(2, 10, 0x888888, 0x444444);
+        gridHelper.rotateX(Math.PI / 2);
+        gridHelper.visible = showGrid;
+        scene.add(gridHelper);
+        
+        scene.add(new THREE.AxesHelper(0.5));
+
+        loadRobotModels(); 
+
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.target.set(0, 0, 0.2);
+        controls.update();
+
+        if (!window.resizeObserver) {
+            window.resizeObserver = new ResizeObserver(entries => {
+                 if (!entries || entries.length === 0) return;
+                 if (!renderer || !camera || document.fullscreenElement) return; 
+                 
+                 const canvas = renderer.domElement;
+                 const width = canvas.clientWidth;
+                 const height = canvas.clientHeight;
+
+                 if (width === 0 || height === 0) return;
+                 
+                 renderer.setSize(width, height, false);
+                 camera.aspect = width / height;
+                 camera.updateProjectionMatrix();
+            });
+            
+            if (canvas.parentElement) { 
+                window.resizeObserver.observe(canvas.parentElement); 
+            }
+        }
+
+        if (!renderer.info.render.frame) {
+            animate();
+        }
+    }
+
+    function animate() {
+        if (!renderer) return; 
+        requestAnimationFrame(animate);
+        if(controls) controls.update();
+        if(renderer && scene && camera) renderer.render(scene, camera);
+    }
+
+    function loadSTL(url, material, parent, offset = [0,0,0], rotation = [0,0,0]) {
+        stl_loader.load(url, (geometry) => {
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(...offset);
+            mesh.rotation.set(...rotation.map(THREE.MathUtils.degToRad));
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            parent.add(mesh);
+        }, undefined, (error) => {
+            console.error(`Error loading ${url}:`, error);
+            if(typeof logMessage === 'function') logMessage('error', `Failed to load model: ${url.split('/').pop()}`);
+        });
+    }
+
+    function loadRobotModels() {
+        // --- FIX: Load the main base at 0,0,0 ---
+        loadSTL('/static/models/base.stl', baseMaterial, scene, [0,0,0], [0, 0, 0]);
+        
+        let last_pivot = scene;
+        if(typeof logMessage === 'function') logMessage('info', 'Assembling robot kinematic chain...');
+        
+        window.DEFAULT_JOINT_CONFIG.forEach((default_config, index) => {
+            const i = index;
+            
+            // --- This now reads from the hard-coded config by default ---
+            // OR from the GUI if the user changes them and hits "Apply"
+            const stl_file = document.getElementById(`j${i}_file`)?.value || default_config.file;
+            const posX = parseFloat(document.getElementById(`j${i}_pos_x`)?.value) || default_config.stl_offset[0];
+            const posY = parseFloat(document.getElementById(`j${i}_pos_y`)?.value) || default_config.stl_offset[1];
+            const posZ = parseFloat(document.getElementById(`j${i}_pos_z`)?.value) || default_config.stl_offset[2];
+            const rotR = parseFloat(document.getElementById(`j${i}_rot_r`)?.value) || default_config.stl_rot[0];
+            const rotP = parseFloat(document.getElementById(`j${i}_rot_p`)?.value) || default_config.stl_rot[1];
+            const rotY = parseFloat(document.getElementById(`j${i}_rot_y`)?.value) || default_config.stl_rot[2];
+
+            const stl_visual_offset = [posX, posY, posZ];
+            const stl_visual_rotation_deg = [rotR, rotP, rotY]; 
+
+            const kinematic_offset = default_config.offset;
+            const joint_axis = default_config.axis;
+            const joint_base_rotation = default_config.joint_rot || [0,0,0];
+
+            const pivot = new THREE.Group();
+            pivot.position.set(...kinematic_offset);
+            pivot.rotation.set(...joint_base_rotation);
+            pivot.userData.axis = joint_axis;
+            pivot.userData.baseRotation = pivot.rotation.clone();
+            
+            last_pivot.add(pivot);
+            if (robotJoints.length < 6) { robotJoints.push(pivot); }
+            
+            let material = (index === 0) ? baseMaterial : (index === 5) ? gripperMaterial : linkMaterial;
+            
+            if (stl_file && stl_file !== 'N/A' && stl_file !== 'null') {
+                loadSTL(
+                    `/static/models/${stl_file}`, 
+                    material, 
+                    pivot, 
+                    stl_visual_offset,
+                    stl_visual_rotation_deg
+                );
+            } else { 
+                console.warn(`No STL file specified for joint ${index + 1}`);
+            }
+            last_pivot = pivot;
+        });
+         if(typeof logMessage === 'function') logMessage('success', `Robot arm kinematic chain assembled (${robotJoints.length} joints).`);
+    }
+
+     window.updateRobotModel = (anglesRad) => {
+        if (!robotJoints || robotJoints.length !== 6 || !anglesRad || anglesRad.length !== 6) {
+             return;
+        }
+        try {
+             robotJoints.forEach((pivot, i) => {
+                 const angle = anglesRad[i] ?? 0;
+                 const axis = pivot.userData.axis || 'z';
+                 const baseRot = pivot.userData.baseRotation;
+                 pivot.rotation.copy(baseRot);
+                 if (axis === 'x') { pivot.rotateX(angle); }
+                 else if (axis === 'y') { pivot.rotateY(angle); }
+                 else { pivot.rotateZ(angle); }
+             });
+        } catch (e) {
+             console.error("Error updating robot model:", e);
+        }
+    };
+</script>
+
+</body>
+</html>
