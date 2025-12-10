@@ -5,6 +5,7 @@ import rclpy.duration
 import rclpy.time # Import Time explicitly
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float32MultiArray, Float32, Bool, Header # Import Header
+from std_srvs.srv import Trigger # Import Trigger Service
 import serial
 import struct
 import time
@@ -78,16 +79,28 @@ class RobotArmBridge(Node):
         self.joint_state_publisher = self.create_publisher(JointState, 'joint_states', qos_profile=sensor_qos_profile)
         self.main_current_publisher = self.create_publisher(Float32, 'main_current', 10)
         self.gripper_current_publisher = self.create_publisher(Float32, 'gripper_current', 10)
-        self.emergency_stop_publisher = self.create_publisher(Bool, 'emergency_stop', 10) # change this to service maybe?
+        
+        # CHANGED: Replaced Publisher with Service to Trigger E-Stop
+        # self.emergency_stop_publisher = self.create_publisher(Bool, 'emergency_stop', 10) 
+        self.trigger_estop_service = self.create_service(Trigger, 'emergency_stop', self.trigger_estop_callback)
+
         self.joint_command_subscriber = self.create_subscription(JointState, 'joint_targets', self.joint_command_callback, 10)
         self.gripper_command_subscriber = self.create_subscription(Float32MultiArray, 'gripper_command', self.gripper_command_callback, 10)
         self.speed_factor_subscriber = self.create_subscription(Float32, 'set_speed_factor', self.set_speed_factor_callback, 10)
-        self.homing_subscriber = self.create_subscription(Bool, 'home_robot', self.home_robot_callback, 10) # this one alos to service!
+        
+        # CHANGED: Replaced Subscriber with Service
+        # self.homing_subscriber = self.create_subscription(Bool, 'home_robot', self.home_robot_callback, 10)
+        self.homing_service = self.create_service(Trigger, 'home_robot', self.home_robot_callback)
+        
         self.set_min_limits_subscriber = self.create_subscription(Float32MultiArray, 'set_min_limits', self.set_min_limits_callback, 10)
         self.set_max_limits_subscriber = self.create_subscription(Float32MultiArray, 'set_max_limits', self.set_max_limits_callback, 10)
         self.set_threshold_subscriber = self.create_subscription(Float32, 'set_collision_threshold', self.set_threshold_callback, 10)
         self.set_dev_threshold_subscriber = self.create_subscription(Float32, 'set_collision_dev_threshold', self.set_dev_threshold_callback, 10)
-        self.release_estop_subscriber = self.create_subscription(Bool, 'release_emergency_stop', self.release_estop_callback, 10) # chnage to service!
+        
+        # CHANGED: Replaced Subscriber with Service
+        # self.release_estop_subscriber = self.create_subscription(Bool, 'release_emergency_stop', self.release_estop_callback, 10)
+        self.release_estop_service = self.create_service(Trigger, 'release_emergency_stop', self.release_estop_callback)
+        
         self.fan_speed_subscriber = self.create_subscription(Float32, 'set_fan_speed', self.set_fan_speed_callback, 10)
 
         # E-Stop timer
@@ -98,7 +111,7 @@ class RobotArmBridge(Node):
         self.load_positions_from_file(DEFAULT_POSITIONS_FILE)
         self.load_sequence_from_file(DEFAULT_SEQUENCE_FILE)
 
-        self.get_logger().info("Robot Arm Bridge with Web GUI initialized (V4.1.1).")
+        self.get_logger().info("Robot Arm Bridge with Web GUI initialized (V4.1.1 - Services).")
         if self.debug: self.get_logger().info("Debug mode is ON.")
         self.connection_thread.start()
 
@@ -437,7 +450,8 @@ class RobotArmBridge(Node):
                 # Sync Python state with MCU/Sim state
                 if mcu_estop_active != self.emergency_stop_active:
                     self.emergency_stop_active = mcu_estop_active
-                    self.emergency_stop_publisher.publish(Bool(data=mcu_estop_active))
+                    # CHANGED: Publisher Removed
+                    # self.emergency_stop_publisher.publish(Bool(data=mcu_estop_active))
                     should_emit_immediately = True
 
             if self.debug and not self.simulation_mode: # Don't spam logs in sim mode
@@ -508,7 +522,7 @@ class RobotArmBridge(Node):
             self.get_logger().error(f"Error sending packet: {e}")
             return False
 
-    # --- ROS Callbacks (Unchanged) ---
+    # --- ROS Callbacks ---
     def joint_command_callback(self, msg: JointState):
         if len(msg.position) != 6: return
         angles_deg = [self.rad_to_deg(p) for p in msg.position]
@@ -524,8 +538,14 @@ class RobotArmBridge(Node):
             with self.state_lock: self.speed_factor = msg.data
             if not self.simulation_mode:
                 self.get_logger().info(f"Speed factor set to: {self.speed_factor}")
-    def home_robot_callback(self, msg: Bool):
-        if msg.data: self.send_home_command_from_gui()
+    
+    # CHANGED: Callback converted to Service style
+    def home_robot_callback(self, request, response):
+        self.send_home_command_from_gui()
+        response.success = True
+        response.message = "Homing initiated"
+        return response
+
     def set_min_limits_callback(self, msg: Float32MultiArray):
         if len(msg.data) == 6: self.send_min_limits_from_gui(list(msg.data))
     def set_max_limits_callback(self, msg: Float32MultiArray):
@@ -534,8 +554,27 @@ class RobotArmBridge(Node):
         self.send_threshold_from_gui(msg.data)
     def set_dev_threshold_callback(self, msg: Float32):
         self.send_dev_threshold_from_gui(msg.data)
-    def release_estop_callback(self, msg: Bool):
-        if msg.data: self.release_estop_from_gui()
+    
+    # CHANGED: Callback converted to Service style
+    def release_estop_callback(self, request, response):
+        self.release_estop_from_gui()
+        response.success = True
+        response.message = "E-Stop release initiated"
+        return response
+    
+    # CHANGED: New Service Callback for triggering E-Stop
+    def trigger_estop_callback(self, request, response):
+        with self.state_lock:
+            self.emergency_stop_active = True
+        self.get_logger().warn("E-STOP triggered via ROS Service!")
+        self.emit_status()
+        # Note: We don't have a specific packet to send to MCU to force E-Stop (only release 'E')
+        # But setting the flag prevents subsequent movements.
+        if self.socketio: self.socketio.emit('log_message', {'level': 'error', 'message': 'E-Stop triggered via ROS Service!'})
+        response.success = True
+        response.message = "E-Stop triggered"
+        return response
+
     def set_fan_speed_callback(self, msg: Float32):
         self.send_fan_command_from_gui(int(msg.data))
 
@@ -981,7 +1020,8 @@ class RobotArmBridge(Node):
                     self.get_logger().error("Status timeout! MCU communication lost. Activating E-Stop.")
                     self.emergency_stop_active = True 
                     self.is_connected = False 
-                    self.emergency_stop_publisher.publish(Bool(data=True))
+                    # CHANGED: Publisher Removed
+                    # self.emergency_stop_publisher.publish(Bool(data=True))
                     if self.ser and self.ser.is_open:
                         self.get_logger().warn("Closing serial port due to timeout.")
                         try: self.ser.close()
