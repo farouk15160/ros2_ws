@@ -2,10 +2,10 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
 import rclpy.duration
-import rclpy.time # Import Time explicitly
+import rclpy.time 
 from sensor_msgs.msg import JointState
-from std_msgs.msg import Float32MultiArray, Float32, Bool, Header # Import Header
-from std_srvs.srv import Trigger # Import Trigger Service
+from std_msgs.msg import Float32MultiArray, Float32, Bool, Header
+from std_srvs.srv import Trigger, SetBool # Added SetBool
 import serial
 import struct
 import time
@@ -13,23 +13,22 @@ import threading
 import math
 import json
 import os
-import signal # For graceful shutdown
+import signal
 
 # Import constants from our new file
 from .bridge_constants import *
 
 # --- Simulation Constants ---
-SIM_LOOP_HZ = 100.0 # How often to update the simulation state
-SIM_MAX_SPEED_DPS = 180.0 # Max speed in deg/sec (at speed factor 10)
-SIM_MIN_SPEED_DPS = 20.0  # Min speed in deg/sec (at speed factor 500)
-
+SIM_LOOP_HZ = 100.0 
+SIM_MAX_SPEED_DPS = 180.0
+SIM_MIN_SPEED_DPS = 20.0 
 
 # ==============================================================================
-# 2. ROS 2 AND FLASK BRIDGE NODE (VERSION 4.1.1 - Sim Fix)
+# 2. ROS 2 AND FLASK BRIDGE NODE (VERSION 4.3.0 - Safety Toggle Added)
 # ==============================================================================
 class RobotArmBridge(Node):
     def __init__(self):
-        super().__init__('visiona_bridgeith_gui')
+        super().__init__('visiona_bridge_with_gui')
 
         self.declare_parameter('serial_port', '/dev/ttyUSB0')
         self.declare_parameter('baud_rate', 921600)
@@ -41,12 +40,12 @@ class RobotArmBridge(Node):
 
         # Threading and State Management
         self.state_lock = threading.Lock()
-        self.sequence_lock = threading.Lock() # Protects sequence data
-        self.position_lock = threading.Lock() # Protects saved_positions data
+        self.sequence_lock = threading.Lock() 
+        self.position_lock = threading.Lock() 
         self.connection_thread = threading.Thread(target=self.manage_connection, daemon=True)
         self.playback_thread = None
         self.stop_playback_flag = threading.Event()
-        self.socketio = None # This will be set by the main launcher
+        self.socketio = None 
         self.reconnect_event = threading.Event()
 
         # --- New Simulation State ---
@@ -70,9 +69,13 @@ class RobotArmBridge(Node):
         self.collision_threshold = 5.0
         self.collision_deviation_threshold = 1.0
         self.fan_speed = 18
+        
+        # --- NEW: Collision Safety State ---
+        # Default is False (OFF) as requested
+        self.collision_detection_enabled = False 
 
         self.last_emit_time = self.get_clock().now()
-        self.emit_interval = rclpy.duration.Duration(seconds=1.0 / 30.0) # 30 Hz GUI updates
+        self.emit_interval = rclpy.duration.Duration(seconds=1.0 / 30.0) 
 
         # ROS Setup
         sensor_qos_profile = QoSProfile(reliability=QoSReliabilityPolicy.BEST_EFFORT, history=QoSHistoryPolicy.KEEP_LAST, depth=1)
@@ -80,26 +83,24 @@ class RobotArmBridge(Node):
         self.main_current_publisher = self.create_publisher(Float32, 'main_current', 10)
         self.gripper_current_publisher = self.create_publisher(Float32, 'gripper_current', 10)
         
-        # CHANGED: Replaced Publisher with Service to Trigger E-Stop
-        # self.emergency_stop_publisher = self.create_publisher(Bool, 'emergency_stop', 10) 
+        # Services
         self.trigger_estop_service = self.create_service(Trigger, 'emergency_stop', self.trigger_estop_callback)
+        self.kill_motors_service = self.create_service(Trigger, 'kill_motors', self.kill_motors_callback)
+        self.homing_service = self.create_service(Trigger, 'home_robot', self.home_robot_callback)
+        self.release_estop_service = self.create_service(Trigger, 'release_emergency_stop', self.release_estop_callback)
+        
+        # --- NEW SERVICE: Toggle Collision Safety ---
+        # request.data = True (ON), False (OFF)
+        self.safety_service = self.create_service(SetBool, 'set_collision_safety', self.set_collision_safety_callback)
 
         self.joint_command_subscriber = self.create_subscription(JointState, 'joint_targets', self.joint_command_callback, 10)
         self.gripper_command_subscriber = self.create_subscription(Float32MultiArray, 'gripper_command', self.gripper_command_callback, 10)
         self.speed_factor_subscriber = self.create_subscription(Float32, 'set_speed_factor', self.set_speed_factor_callback, 10)
         
-        # CHANGED: Replaced Subscriber with Service
-        # self.homing_subscriber = self.create_subscription(Bool, 'home_robot', self.home_robot_callback, 10)
-        self.homing_service = self.create_service(Trigger, 'home_robot', self.home_robot_callback)
-        
         self.set_min_limits_subscriber = self.create_subscription(Float32MultiArray, 'set_min_limits', self.set_min_limits_callback, 10)
         self.set_max_limits_subscriber = self.create_subscription(Float32MultiArray, 'set_max_limits', self.set_max_limits_callback, 10)
         self.set_threshold_subscriber = self.create_subscription(Float32, 'set_collision_threshold', self.set_threshold_callback, 10)
         self.set_dev_threshold_subscriber = self.create_subscription(Float32, 'set_collision_dev_threshold', self.set_dev_threshold_callback, 10)
-        
-        # CHANGED: Replaced Subscriber with Service
-        # self.release_estop_subscriber = self.create_subscription(Bool, 'release_emergency_stop', self.release_estop_callback, 10)
-        self.release_estop_service = self.create_service(Trigger, 'release_emergency_stop', self.release_estop_callback)
         
         self.fan_speed_subscriber = self.create_subscription(Float32, 'set_fan_speed', self.set_fan_speed_callback, 10)
 
@@ -111,7 +112,7 @@ class RobotArmBridge(Node):
         self.load_positions_from_file(DEFAULT_POSITIONS_FILE)
         self.load_sequence_from_file(DEFAULT_SEQUENCE_FILE)
 
-        self.get_logger().info("Robot Arm Bridge with Web GUI initialized (V4.1.1 - Services).")
+        self.get_logger().info("Robot Arm Bridge with Web GUI initialized (V4.3.0 - Safety Toggle).")
         if self.debug: self.get_logger().info("Debug mode is ON.")
         self.connection_thread.start()
 
@@ -125,47 +126,34 @@ class RobotArmBridge(Node):
             self.simulation_mode = enable
             
             if enable:
-                # --- Enabling Simulation Mode ---
                 self.get_logger().warn(">>> SIMULATION MODE ENABLED <<<")
                 if self.socketio: self.socketio.emit('log_message', {'level': 'warn', 'message': 'Simulation Mode Enabled.'})
                 
-                # Force disconnect real serial port
                 if self.ser and self.ser.is_open:
                     self.get_logger().info("Closing serial port for simulation.")
                     try: self.ser.close()
                     except Exception as e: self.get_logger().error(f"Error closing serial port: {e}")
                     self.ser = None
                 
-                # Set "connected" state
                 self.is_connected = True
-                self.emergency_stop_active = False # Reset E-Stop
+                self.emergency_stop_active = False 
                 
-                # Sync simulation state
                 self.sim_current_joint_angles_deg = self.current_joint_angles_deg[:]
                 self.sim_target_joint_angles_deg = self.current_joint_angles_deg[:]
                 self.sim_last_update_time = self.get_clock().now()
                 
-                # Start simulation worker thread
                 if self.simulation_thread is None or not self.simulation_thread.is_alive():
                     self.simulation_thread = threading.Thread(target=self._simulation_worker, daemon=True)
                     self.simulation_thread.start()
             
             else:
-                # --- Disabling Simulation Mode ---
                 self.get_logger().warn(">>> SIMULATION MODE DISABLED <<<")
                 if self.socketio: self.socketio.emit('log_message', {'level': 'info', 'message': 'Simulation Mode Disabled.'})
-                
-                self.is_connected = False # Will trigger reconnect
-                
-                # Simulation thread will stop itself
-                # Trigger the connection manager to wake up and try connecting for real
+                self.is_connected = False 
                 self.reconnect_event.set() 
         
-        self.emit_status() # Update GUI immediately
+        self.emit_status() 
 
-    # =========================================================================
-    # --- THIS IS THE CORRECTED FUNCTION ---
-    # =========================================================================
     def _simulation_worker(self):
         """Worker thread for running the simulation loop."""
         self.get_logger().info("Simulation worker started.")
@@ -180,7 +168,6 @@ class RobotArmBridge(Node):
                 time.sleep(sleep_duration / 2.0)
                 continue
             
-            # --- FIX: Declare all variables *outside* the lock ---
             new_angles = []
             sim_main_current = 0.0
             sim_gripper_current = 0.0
@@ -189,16 +176,13 @@ class RobotArmBridge(Node):
             with self.state_lock:
                 # Calculate speed
                 speed_range = 500.0 - 10.0
-                # 0.0=fast (factor 10), 1.0=slow (factor 500)
                 speed_normalized = max(0.0, min(1.0, (self.speed_factor - 10.0) / speed_range)) 
                 deg_per_sec = SIM_MAX_SPEED_DPS - (speed_normalized * (SIM_MAX_SPEED_DPS - SIM_MIN_SPEED_DPS))
                 max_change_this_frame = deg_per_sec * dt
                 
                 is_moving = False
-                # --- FIX: Use the 'new_angles' variable from the outer scope ---
                 new_angles = self.sim_current_joint_angles_deg[:] 
                 
-                # Interpolate each joint
                 for i in range(6):
                     target = self.sim_target_joint_angles_deg[i]
                     current = self.sim_current_joint_angles_deg[i]
@@ -211,34 +195,25 @@ class RobotArmBridge(Node):
                     change = max(-max_change_this_frame, min(max_change_this_frame, diff))
                     new_angles[i] = current + change
                 
-                # --- FIX: Update all variables for the outer scope ---
                 self.sim_current_joint_angles_deg = new_angles[:]
                 sim_main_current = 0.15 if is_moving else 0.05
-                # Fake gripper current if the gripper joint is moving
                 is_gripper_moving = abs(self.sim_current_joint_angles_deg[5] - self.sim_target_joint_angles_deg[5]) > 0.01
                 sim_gripper_current = 5.0 if is_gripper_moving else 0.0 
                 sim_estop = 1 if self.emergency_stop_active else 0
             
-            # --- FIX: This call now has all the correct values ---
             try:
-                # This function publishes to ROS and updates the GUI
                 self._update_state_from_status(
                     sim_main_current, 
                     sim_gripper_current,
-                    *new_angles, # This is now the list of 6 angles
+                    *new_angles,
                     sim_estop
                 )
             except Exception as e:
-                # Log any errors from the update function
                 self.get_logger().error(f"Error in sim worker update: {e}", exc_info=True)
             
-            # Sleep for the loop duration
             time.sleep(sleep_duration)
             
         self.get_logger().info("Simulation worker stopped.")
-    # =========================================================================
-    # --- END OF CORRECTED FUNCTION ---
-    # =========================================================================
 
     def _process_sim_command(self, command_id: int, angles_deg: list, speed_factor: float, gripper_current: float):
         """Intercepts 'send_packet' calls during simulation mode."""
@@ -248,16 +223,16 @@ class RobotArmBridge(Node):
         with self.state_lock:
             if self.emergency_stop_active and cmd_char != 'E':
                 self.get_logger().warn("Sim E-Stop active, ignoring command.")
-                return True # Pretend it was "sent"
+                return True 
                 
             if cmd_char == 'M':
                 self.sim_target_joint_angles_deg = angles_deg[:]
             elif cmd_char == 'G':
-                # In sim, gripper is just another joint
                 self.sim_target_joint_angles_deg = angles_deg[:]
             elif cmd_char == 'H':
-                # Set target to a "home" position (e.g., all 90)
                 self.sim_target_joint_angles_deg = [90.0] * 6 
+            elif cmd_char == 'K': 
+                self.get_logger().warn("Sim: Motors Killed (Relaxed).")
             elif cmd_char == 'E':
                 self.get_logger().warn("Sim E-Stop Released!")
                 self.emergency_stop_active = False
@@ -271,19 +246,23 @@ class RobotArmBridge(Node):
                 self.collision_deviation_threshold = speed_factor
             elif cmd_char == 'F': 
                 self.fan_speed = int(angles_deg[0])
+            elif cmd_char == 'O':
+                # Update collision safety state in Sim
+                enabled = (speed_factor == 1.0)
+                self.collision_detection_enabled = enabled
+                state_str = "ENABLED" if enabled else "DISABLED"
+                self.get_logger().warn(f"Sim: Collision Safety {state_str}")
             
-            # Emit status immediately for config changes
             if cmd_char not in ['M', 'G', 'H']:
                 self.emit_status()
 
-        return True # Packet "sent" successfully
+        return True 
 
 
-    # --- Connection and Serial Parsing (Modified) ---
+    # --- Connection and Serial Parsing ---
     def manage_connection(self):
         """Handles serial connection, disconnection, and retries."""
         while rclpy.ok():
-            # If in simulation mode, just sleep and bypass all serial logic
             if self.simulation_mode:
                 time.sleep(0.5)
                 continue
@@ -305,6 +284,14 @@ class RobotArmBridge(Node):
                     self.ser.reset_input_buffer()
                     self.request_config_from_mcu()
                     self.send_fan_command_from_gui(self.fan_speed)
+
+                    # --- ENFORCE DEFAULT SAFETY OFF ON BOOT ---
+                    # Send 'O' with 0.0
+                    self.get_logger().info("Enforcing Safety OFF on connection...")
+                    self.send_packet(ord('O'), [], 0.0, 0.0)
+                    with self.state_lock:
+                        self.collision_detection_enabled = False
+                    self.emit_status()
 
                 except serial.SerialException as e:
                     self.get_logger().warn(f"Connection failed: {e}. Waiting to retry...", throttle_duration_sec=5)
@@ -412,12 +399,9 @@ class RobotArmBridge(Node):
         except Exception as e:
              self.get_logger().error(f"Unexpected error in process_config_packet: {e}")
 
-    # --- Refactored Status Processing ---
     def process_status_packet(self, data):
-        """Unpacks real status packets from serial."""
         try:
             _, _, main, grip, a0, a1, a2, a3, a4, a5, collision_flag, _ = struct.unpack(STATUS_PACKET_FORMAT, data)
-            # Call the shared update logic
             self._update_state_from_status(main, grip, a0, a1, a2, a3, a4, a5, collision_flag)
         except struct.error as e:
             self.get_logger().error(f"Failed to unpack status packet: {e}")
@@ -425,11 +409,7 @@ class RobotArmBridge(Node):
             self.get_logger().error(f"Unexpected error in process_status_packet: {e}", exc_info=True)
 
     def _update_state_from_status(self, main, grip, a0, a1, a2, a3, a4, a5, collision_flag):
-        """
-        Shared logic to update state from status data (real or simulated).
-        This function is the new core of status processing.
-        """
-        self.last_status_time = self.get_clock().now() # Reset timeout timer
+        self.last_status_time = self.get_clock().now() 
         should_emit_immediately = False
         try:
             with self.state_lock:
@@ -439,7 +419,6 @@ class RobotArmBridge(Node):
             mcu_estop_active = (collision_flag == 1)
             
             with self.state_lock:
-                # Log state changes for E-Stop
                 if mcu_estop_active and not self.emergency_stop_active:
                     self.get_logger().error("E-STOP triggered!")
                     if self.socketio: self.socketio.emit('log_message', {'level': 'error', 'message': 'E-STOP triggered!'})
@@ -447,14 +426,11 @@ class RobotArmBridge(Node):
                     self.get_logger().info("E-Stop cleared.")
                     if self.socketio: self.socketio.emit('log_message', {'level': 'info', 'message': 'E-Stop released.'})
 
-                # Sync Python state with MCU/Sim state
                 if mcu_estop_active != self.emergency_stop_active:
                     self.emergency_stop_active = mcu_estop_active
-                    # CHANGED: Publisher Removed
-                    # self.emergency_stop_publisher.publish(Bool(data=mcu_estop_active))
                     should_emit_immediately = True
 
-            if self.debug and not self.simulation_mode: # Don't spam logs in sim mode
+            if self.debug and not self.simulation_mode: 
                 angles_str = ", ".join([f"{angle:.1f}" for angle in self.current_joint_angles_deg])
                 self.get_logger().info(f"RECV ◄ 'S'|M:{main:.2f}A G:{grip:.1f}mA A:[{angles_str}] E:{mcu_estop_active}", throttle_duration_sec=0.2)
 
@@ -463,12 +439,10 @@ class RobotArmBridge(Node):
             joint_state_msg.name = ['joint_1', 'joint_2', 'joint_3', 'joint_4', 'joint_5', 'gripper']
             joint_state_msg.position = [self.deg_to_rad(angle) for angle in self.current_joint_angles_deg]
 
-            # Publish ROS topics
             self.joint_state_publisher.publish(joint_state_msg)
             self.main_current_publisher.publish(Float32(data=main))
             self.gripper_current_publisher.publish(Float32(data=grip))
 
-            # Update GUI (throttled)
             now = self.get_clock().now()
             if should_emit_immediately or (now - self.last_emit_time > self.emit_interval):
                 self.emit_status()
@@ -478,8 +452,6 @@ class RobotArmBridge(Node):
 
 
     def send_packet(self, command_id: int, angles_deg: list, speed_factor: float, gripper_current: float):
-        """Packs and sends a command packet. Intercepts for simulation."""
-        
         if self.simulation_mode:
             return self._process_sim_command(command_id, angles_deg, speed_factor, gripper_current)
 
@@ -504,6 +476,11 @@ class RobotArmBridge(Node):
                 elif cmd_char == 'T': log_msg += f", AbsThr:{speed_factor:.2f}A"
                 elif cmd_char == 'D': log_msg += f", DevThr:{speed_factor:.2f}A"
                 elif cmd_char == 'F': log_msg += f", FanDuty:{payload_angles[0]:.0f}"
+                elif cmd_char == 'K': log_msg += " (KILL MOTORS)"
+                elif cmd_char == 'E': log_msg += " (RELEASE E-STOP)"
+                elif cmd_char == 'O': 
+                    state_str = "ON" if speed_factor == 1.0 else "OFF"
+                    log_msg += f" (SAFETY SENSOR {state_str})"
                 elif cmd_char in ['M', 'G', 'H']:
                     log_msg += f", Angles:[{', '.join(f'{a:.1f}' for a in payload_angles)}], Spd:{speed_factor:.0f}"
                     if cmd_char == 'G': log_msg += f", GripCur:{gripper_current:.0f}mA"
@@ -539,7 +516,6 @@ class RobotArmBridge(Node):
             if not self.simulation_mode:
                 self.get_logger().info(f"Speed factor set to: {self.speed_factor}")
     
-    # CHANGED: Callback converted to Service style
     def home_robot_callback(self, request, response):
         self.send_home_command_from_gui()
         response.success = True
@@ -555,30 +531,40 @@ class RobotArmBridge(Node):
     def set_dev_threshold_callback(self, msg: Float32):
         self.send_dev_threshold_from_gui(msg.data)
     
-    # CHANGED: Callback converted to Service style
     def release_estop_callback(self, request, response):
         self.release_estop_from_gui()
         response.success = True
         response.message = "E-Stop release initiated"
         return response
     
-    # CHANGED: New Service Callback for triggering E-Stop
     def trigger_estop_callback(self, request, response):
         with self.state_lock:
             self.emergency_stop_active = True
         self.get_logger().warn("E-STOP triggered via ROS Service!")
         self.emit_status()
-        # Note: We don't have a specific packet to send to MCU to force E-Stop (only release 'E')
-        # But setting the flag prevents subsequent movements.
         if self.socketio: self.socketio.emit('log_message', {'level': 'error', 'message': 'E-Stop triggered via ROS Service!'})
         response.success = True
         response.message = "E-Stop triggered"
         return response
 
+    def kill_motors_callback(self, request, response):
+        self.kill_motors_from_gui()
+        response.success = True
+        response.message = "Kill motors command sent"
+        return response
+    
+    # --- NEW: Set Collision Safety Callback ---
+    def set_collision_safety_callback(self, request, response):
+        # request.data is bool. True = ON, False = OFF
+        self.set_collision_safety_from_gui(request.data)
+        response.success = True
+        response.message = f"Collision Safety {'ENABLED' if request.data else 'DISABLED'}"
+        return response
+
     def set_fan_speed_callback(self, msg: Float32):
         self.send_fan_command_from_gui(int(msg.data))
 
-    # --- GUI-facing Methods (Unchanged) ---
+    # --- GUI-facing Methods ---
     def send_joint_command_from_gui(self, angles_deg):
         if not angles_deg or len(angles_deg) != 6:
             self.get_logger().error("Invalid joint command from GUI.")
@@ -675,8 +661,30 @@ class RobotArmBridge(Node):
             if self.socketio: self.socketio.emit('log_message', {'level': 'warn', 'message': 'E-Stop release command sent...'})
         else:
             if self.socketio: self.socketio.emit('log_message', {'level': 'error', 'message': 'Failed to send E-Stop release command!'})
+    def kill_motors_from_gui(self):
+        self.get_logger().warn("Attempting to KILL MOTORS (Relax)...")
+        if self.send_packet(ord('K'), [], 0.0, 0.0):
+            if self.socketio: self.socketio.emit('log_message', {'level': 'warn', 'message': 'Kill Motors command sent.'})
+        else:
+            if self.socketio: self.socketio.emit('log_message', {'level': 'error', 'message': 'Failed to send Kill Motors command!'})
 
-    # --- Sequence Methods (Unchanged) ---
+    # --- NEW: Set Collision Safety Logic ---
+    def set_collision_safety_from_gui(self, enable: bool):
+        val = 1.0 if enable else 0.0
+        state_str = "ENABLED (ON)" if enable else "DISABLED (OFF)"
+        self.get_logger().info(f"Setting Collision Safety to: {state_str}")
+        
+        # 'O' packet with speed_factor 1.0 or 0.0
+        if self.send_packet(ord('O'), [], val, 0.0):
+            with self.state_lock:
+                self.collision_detection_enabled = enable
+            self.emit_status()
+            if self.socketio: self.socketio.emit('log_message', {'level': 'warn' if not enable else 'info', 'message': f'Safety Sensor {state_str}'})
+        else:
+             if self.socketio: self.socketio.emit('log_message', {'level': 'error', 'message': 'Failed to set Safety Sensor!'})
+
+
+    # --- Sequence Methods ---
     def add_sequence_point(self, delay_ms=500):
         try:
             delay_ms = int(delay_ms)
@@ -871,13 +879,12 @@ class RobotArmBridge(Node):
                                     break
                             if at_target:
                                 break
-                        time.sleep(0.05) # Poll quickly
+                        time.sleep(0.05) 
                     
                     if delay_ms > 0 and not self.stop_playback_flag.is_set():
                         self.stop_playback_flag.wait(timeout=delay_ms / 1000.0)
                 
                 else:
-                    # Original wait logic for real robot
                     check_interval = 0.05
                     end_time = time.time() + wait_time_sec
                     interrupted = False
@@ -905,7 +912,7 @@ class RobotArmBridge(Node):
                 self.socketio.emit('log_message', {'level': 'info', 'message': final_message})
                 self.socketio.emit('playback_stopped')
 
-    # --- Saved Position Methods (Unchanged) ---
+    # --- Saved Position Methods ---
     def save_position(self, name):
         if not name or not isinstance(name, str) or not name.strip():
             self.get_logger().error("Invalid name for saving position.")
@@ -1004,7 +1011,7 @@ class RobotArmBridge(Node):
             self.emit_status()
 
 
-    # --- Other Methods (Modified) ---
+    # --- Other Methods ---
     def check_status_timeout(self):
         """Timer callback ONLY for complete communication loss."""
         # --- Do not run timeout check in simulation mode ---
@@ -1020,8 +1027,6 @@ class RobotArmBridge(Node):
                     self.get_logger().error("Status timeout! MCU communication lost. Activating E-Stop.")
                     self.emergency_stop_active = True 
                     self.is_connected = False 
-                    # CHANGED: Publisher Removed
-                    # self.emergency_stop_publisher.publish(Bool(data=True))
                     if self.ser and self.ser.is_open:
                         self.get_logger().warn("Closing serial port due to timeout.")
                         try: self.ser.close()
@@ -1051,7 +1056,9 @@ class RobotArmBridge(Node):
                     "fan_speed": self.fan_speed,
                     "current_speed_factor": self.speed_factor,
                     "is_playing": self.playback_thread and self.playback_thread.is_alive(),
-                    "simulation_mode": self.simulation_mode
+                    "simulation_mode": self.simulation_mode,
+                    # --- NEW FIELD ---
+                    "collision_detection_enabled": self.collision_detection_enabled
                 }
             with self.sequence_lock:
                 status_data["sequence"] = self.sequence[:]
