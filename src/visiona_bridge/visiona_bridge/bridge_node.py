@@ -4,6 +4,7 @@ from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
 import rclpy.duration
 import rclpy.time 
 from sensor_msgs.msg import JointState
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from std_msgs.msg import Float32MultiArray, Float32, Bool, Header
 from std_srvs.srv import Trigger, SetBool # Added SetBool
 import serial
@@ -14,6 +15,7 @@ import math
 import json
 import os
 import signal
+
 
 # Import constants from our new file
 from .bridge_constants import *
@@ -33,9 +35,11 @@ class RobotArmBridge(Node):
         self.declare_parameter('serial_port', '/dev/ttyUSB0')
         self.declare_parameter('baud_rate', 921600)
         self.declare_parameter('debug', True)
+        self.declare_parameter('publish_joint_states', True)
         self.serial_port = self.get_parameter('serial_port').get_parameter_value().string_value
         self.baud_rate = self.get_parameter('baud_rate').get_parameter_value().integer_value
         self.debug = self.get_parameter('debug').get_parameter_value().bool_value
+        self.should_publish_joint_states = self.get_parameter('publish_joint_states').get_parameter_value().bool_value
         self.ser = None
 
         # Threading and State Management
@@ -73,13 +77,18 @@ class RobotArmBridge(Node):
         # --- NEW: Collision Safety State ---
         # Default is False (OFF) as requested
         self.collision_detection_enabled = False 
-
+        
         self.last_emit_time = self.get_clock().now()
-        self.emit_interval = rclpy.duration.Duration(seconds=1.0 / 30.0) 
-
-        # ROS Setup
-        sensor_qos_profile = QoSProfile(reliability=QoSReliabilityPolicy.BEST_EFFORT, history=QoSHistoryPolicy.KEEP_LAST, depth=1)
+        self.emit_interval = rclpy.duration.Duration(seconds=1.0 / 30.0)
+        self.declare_parameter('sync_gazebo', False)
+        
+        # --- Publishers ---
+        # Quality of Service Profile for Sensor Data
+        sensor_qos_profile = QoSProfile(depth=10, reliability=QoSReliabilityPolicy.BEST_EFFORT)
         self.joint_state_publisher = self.create_publisher(JointState, 'joint_states', qos_profile=sensor_qos_profile)
+
+        # Gazebo Trajectory Publisher (for Digital Twin)
+        self.gazebo_traj_pub = self.create_publisher(JointTrajectory, '/set_joint_trajectory', 10)
         self.main_current_publisher = self.create_publisher(Float32, 'main_current', 10)
         self.gripper_current_publisher = self.create_publisher(Float32, 'gripper_current', 10)
         
@@ -436,10 +445,23 @@ class RobotArmBridge(Node):
 
             joint_state_msg = JointState()
             joint_state_msg.header.stamp = self.get_clock().now().to_msg()
-            joint_state_msg.name = ['joint_1', 'joint_2', 'joint_3', 'joint_4', 'joint_5', 'gripper']
+            joint_state_msg.name = [
+                'base_link_joint', 
+                'link_1_shoulder_joint', 
+                'link_2_elbow_joint', 
+                'link_3_wrist_joint', 
+                'link_3_wrist_to_gripper_base_joint', 
+                'left_finger_joint'
+            ]
             joint_state_msg.position = [self.deg_to_rad(angle) for angle in self.current_joint_angles_deg]
 
-            self.joint_state_publisher.publish(joint_state_msg)
+            if self.should_publish_joint_states:
+                self.joint_state_publisher.publish(joint_state_msg)
+
+            # --- Digital Twin Sync ---
+            if self.get_parameter('sync_gazebo').get_parameter_value().bool_value:
+                self._publish_gazebo_sync(joint_state_msg)
+            
             self.main_current_publisher.publish(Float32(data=main))
             self.gripper_current_publisher.publish(Float32(data=grip))
 
@@ -447,8 +469,24 @@ class RobotArmBridge(Node):
             if should_emit_immediately or (now - self.last_emit_time > self.emit_interval):
                 self.emit_status()
                 self.last_emit_time = now
+
         except Exception as e:
-            self.get_logger().error(f"Unexpected error in _update_state_from_status: {e}", exc_info=True)
+            self.get_logger().error(f"Error in update_state_from_status: {e}")
+
+    def _publish_gazebo_sync(self, joint_state_msg):
+        """Publishes a JointTrajectory message to drive Gazebo to the current real robot state."""
+        traj_msg = JointTrajectory()
+        # traj_msg.header.stamp = self.get_clock().now().to_msg() # Removed to prevent SimTime mismatch (exec immediately)
+        traj_msg.header.frame_id = 'base_link' # gazebo_ros_joint_pose_trajectory needs a frame (usually ignored for joints but required by validation?)
+        traj_msg.joint_names = joint_state_msg.name
+        
+        point = JointTrajectoryPoint()
+        point.positions = joint_state_msg.position
+        point.time_from_start.sec = 0
+        point.time_from_start.nanosec = 50000000 # 50ms to reach target (immediate)
+        
+        traj_msg.points.append(point)
+        self.gazebo_traj_pub.publish(traj_msg)
 
 
     def send_packet(self, command_id: int, angles_deg: list, speed_factor: float, gripper_current: float):

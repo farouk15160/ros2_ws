@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="visiona">
     <xacro:arg name="controller_config_path" default="" />
+    <xacro:arg name="use_sim" default="true" />
     <xacro:include filename="./gripper.xacro" />
     <link name="world">
     </link>
@@ -13,7 +14,7 @@
         <visual name="base">
             <origin xyz="0 0 0 " rpy="0 0 0 " />
             <geometry>
-                <mesh filename="package://visiona_bridge/meshes/base.stl" scale="0.001 0.001 0.001" />
+                <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/base.stl" scale="0.001 0.001 0.001" />
             </geometry>
         </visual>
 
@@ -57,7 +58,7 @@
         <visual name="base_link">
             <origin xyz="0 0 0.075 " rpy="0 0 0 " />
             <geometry>
-                <mesh filename="package://visiona_bridge/meshes/base_link.stl"
+                <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/base_link.stl"
                     scale="0.001 0.001 0.001" />
             </geometry>
         </visual>
@@ -78,7 +79,7 @@
         <visual name="link_1_shoulder">
             <origin xyz="0 0 0 " rpy="0 0 0 " />
             <geometry>
-                <mesh filename="package://visiona_bridge/meshes/link_1_shoulder.stl"
+                <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/link_1_shoulder.stl"
                     scale="0.001 0.001 0.001" />
             </geometry>
 
@@ -100,7 +101,7 @@
         <visual name="link_2_elbow">
             <origin xyz="0 0 0 " rpy="0 0 0 " />
             <geometry>
-                <mesh filename="package://visiona_bridge/meshes/link_2_elbow.stl"
+                <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/link_2_elbow.stl"
                     scale="0.001 0.001 0.001" />
             </geometry>
         </visual>
@@ -121,7 +122,7 @@
         <visual name="link_3_wrist">
             <origin xyz="0 0 0 " rpy="0 0 0 " />
             <geometry>
-                <mesh filename="package://visiona_bridge/meshes/link_3_wrist.stl"
+                <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/link_3_wrist.stl"
                     scale="0.001 0.001 0.001" />
             </geometry>
         </visual>

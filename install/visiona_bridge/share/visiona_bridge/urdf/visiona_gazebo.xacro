@@ -29,18 +29,20 @@
         <material>Gazebo/Green</material>
         <self_collide>false</self_collide>
     </gazebo>
-    <gazebo>
-        <plugin name="gazebo_ros_joint_state_publisher"
-            filename="libgazebo_ros_joint_state_publisher.so">
-            <update_rate>20</update_rate>
-            <joint_name>base_link_joint</joint_name>
-            <joint_name>link_1_shoulder_joint</joint_name>
-            <joint_name>link_2_elbow_joint</joint_name>
-            <joint_name>link_3_wrist_joint</joint_name>
-            <joint_name>link_3_wrist_to_gripper_base_joint</joint_name>
-            <joint_name>left_finger_joint</joint_name>
-        </plugin>
-    </gazebo>
+    <xacro:if value="$(arg use_sim)">
+        <gazebo>
+            <plugin name="gazebo_ros_joint_state_publisher"
+                filename="libgazebo_ros_joint_state_publisher.so">
+                <update_rate>20</update_rate>
+                <joint_name>base_link_joint</joint_name>
+                <joint_name>link_1_shoulder_joint</joint_name>
+                <joint_name>link_2_elbow_joint</joint_name>
+                <joint_name>link_3_wrist_joint</joint_name>
+                <joint_name>link_3_wrist_to_gripper_base_joint</joint_name>
+                <joint_name>left_finger_joint</joint_name>
+            </plugin>
+        </gazebo>
+    </xacro:if>
     <gazebo>
         <plugin name="gazebo_ros_joint_pose_trajectory"
             filename="libgazebo_ros_joint_pose_trajectory.so">
@@ -49,13 +51,50 @@
     </gazebo>
 
 
-    <!-- <gazebo>
-        <plugin name="gazebo_ros2_control"
-            filename="libgazebo_ros2_control.so">
+    <xacro:if value="$(arg use_sim)">
+        <gazebo>
+            <plugin name="gazebo_ros2_control"
+                filename="libgazebo_ros2_control.so">
 
-            <parameters>$(arg controller_config_path)</parameters>
+                <parameters>$(arg controller_config_path)</parameters>
 
-        </plugin>
-    </gazebo> -->
+            </plugin>
+        </gazebo>
+    </xacro:if>
+
+    <xacro:unless value="$(arg use_sim)">
+        <gazebo reference="base">
+            <kinematic>true</kinematic>
+            <gravity>false</gravity>
+        </gazebo>
+        <gazebo reference="base_link">
+            <kinematic>true</kinematic>
+            <gravity>false</gravity>
+        </gazebo>
+        <gazebo reference="link_1_shoulder">
+            <kinematic>true</kinematic>
+            <gravity>false</gravity>
+        </gazebo>
+        <gazebo reference="link_2_elbow">
+            <kinematic>true</kinematic>
+            <gravity>false</gravity>
+        </gazebo>
+        <gazebo reference="link_3_wrist">
+            <kinematic>true</kinematic>
+            <gravity>false</gravity>
+        </gazebo>
+        <gazebo reference="gripper_base">
+            <kinematic>true</kinematic>
+            <gravity>false</gravity>
+        </gazebo>
+        <gazebo reference="left_finger_link">
+            <kinematic>true</kinematic>
+            <gravity>false</gravity>
+        </gazebo>
+        <gazebo reference="right_finger_link">
+            <kinematic>true</kinematic>
+            <gravity>false</gravity>
+        </gazebo>
+    </xacro:unless>
 
 </robot>

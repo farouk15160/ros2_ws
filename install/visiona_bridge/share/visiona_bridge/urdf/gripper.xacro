@@ -5,14 +5,14 @@
             <visual>
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
-                    <mesh filename="package://visiona_bridge/meshes/gripper_joint.stl"
+                    <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/gripper_joint.stl"
                         scale="0.001 0.001 0.001" />
                 </geometry>
             </visual>
             <!-- <collision>
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
-                    <mesh filename="package://visiona_bridge/meshes/gripper_joint.stl"
+                    <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/gripper_joint.stl"
                         scale="0.001 0.001 0.001" />
                 </geometry>
             </collision> -->
@@ -37,14 +37,14 @@
             <visual>
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
-                    <mesh filename="package://visiona_bridge/meshes/gripper_left_finger.stl"
+                    <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/gripper_left_finger.stl"
                         scale="0.001 0.001 0.001" />
                 </geometry>
             </visual>
             <!-- <collision>
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
-                    <mesh filename="package://visiona_bridge/meshes/gripper_left_finger.stl"
+                    <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/gripper_left_finger.stl"
                         scale="0.001 0.001 0.001" />
                 </geometry>
             </collision> -->
@@ -59,7 +59,7 @@
 
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
-                    <mesh filename="package://visiona_bridge/meshes/gripper_right_finger.stl"
+                    <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/gripper_right_finger.stl"
                         scale="0.001 0.001 0.001" />
                 </geometry>
             </visual>
