@@ -1,7 +1,7 @@
 # ROS build and install directories
 build/
-devel/        # ROS 1 only
-install/      # ROS 2 only
+devel/        
+install/      
 
 # ROS log files
 log/
@@ -12,4 +12,10 @@ log/
 *.swo
 *.DS_Store
 
-#src/urdf_example
+# PlatformIO
+.pio/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
