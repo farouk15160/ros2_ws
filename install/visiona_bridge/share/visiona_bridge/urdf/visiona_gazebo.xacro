@@ -20,15 +20,19 @@
         <material>Gazebo/Green</material>
         <self_collide>false</self_collide>
     </gazebo>
-    <gazebo
-        reference="link_3_wrist_to_gripper_base_joint">
+    <gazebo reference="gripper_base">
         <material>Gazebo/Green</material>
         <self_collide>false</self_collide>
     </gazebo>
-    <gazebo reference="left_finger_joint">
+    <gazebo reference="left_finger_link">
         <material>Gazebo/Green</material>
         <self_collide>false</self_collide>
     </gazebo>
+    <gazebo reference="right_finger_link">
+        <material>Gazebo/Green</material>
+        <self_collide>false</self_collide>
+    </gazebo>
+
     <xacro:if value="$(arg use_sim)">
         <gazebo>
             <plugin name="gazebo_ros_joint_state_publisher"
@@ -42,7 +46,20 @@
                 <joint_name>left_finger_joint</joint_name>
             </plugin>
         </gazebo>
+        
+        <!-- Mimic Joint Plugin for Right Finger -->
+        <gazebo>
+            <plugin name="mimic_joint_plugin" filename="libgazebo_ros_mimic_joint_plugin.so">
+                <joint>left_finger_joint</joint>
+                <mimicJoint>right_finger_joint</mimicJoint>
+                <multiplier>-1.0</multiplier>
+                <offset>0.0</offset>
+                <sensitiveness>0.0</sensitiveness>
+                <maxEffort>100.0</maxEffort>
+            </plugin>
+        </gazebo>
     </xacro:if>
+
     <gazebo>
         <plugin name="gazebo_ros_joint_pose_trajectory"
             filename="libgazebo_ros_joint_pose_trajectory.so">

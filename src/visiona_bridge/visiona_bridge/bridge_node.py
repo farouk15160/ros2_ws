@@ -87,8 +87,8 @@ class RobotArmBridge(Node):
         sensor_qos_profile = QoSProfile(depth=10, reliability=QoSReliabilityPolicy.BEST_EFFORT)
         self.joint_state_publisher = self.create_publisher(JointState, 'joint_states', qos_profile=sensor_qos_profile)
 
-        # Gazebo Trajectory Publisher (for Digital Twin)
-        self.gazebo_traj_pub = self.create_publisher(JointTrajectory, '/set_joint_trajectory', 10)
+        # Gazebo Trajectory Publisher (for Digital Twin and Sim Mode)
+        self.gazebo_traj_pub = self.create_publisher(JointTrajectory, '/joint_trajectory_controller/joint_trajectory', 10)
         self.main_current_publisher = self.create_publisher(Float32, 'main_current', 10)
         self.gripper_current_publisher = self.create_publisher(Float32, 'gripper_current', 10)
         
@@ -458,8 +458,8 @@ class RobotArmBridge(Node):
             if self.should_publish_joint_states:
                 self.joint_state_publisher.publish(joint_state_msg)
 
-            # --- Digital Twin Sync ---
-            if self.get_parameter('sync_gazebo').get_parameter_value().bool_value:
+            # --- Digital Twin Sync OR Simulation Drive ---
+            if self.simulation_mode or self.get_parameter('sync_gazebo').get_parameter_value().bool_value:
                 self._publish_gazebo_sync(joint_state_msg)
             
             self.main_current_publisher.publish(Float32(data=main))

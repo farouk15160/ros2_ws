@@ -18,6 +18,8 @@
 #include <cmath>
 #include <esp_task_wdt.h> // Hardware Watchdog Library
 
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+
 // ==========================================================================
 // --- Stepper Motor (Base) Configuration ---
 // ==========================================================================
@@ -234,13 +236,15 @@ void emergency_stop()
 }
 
 // ==========================================================================
-// --- Task: Motion Interpolator ---
+// --- Task: Motion Interpolator (IIR Filter / Exponential Smoothing) ---
 // ==========================================================================
 void task_motion_interpolator(void *pvParameters)
 {
   esp_task_wdt_add(NULL);
-  const TickType_t xFrequency = pdMS_TO_TICKS(20);
+  const TickType_t xFrequency = pdMS_TO_TICKS(10); // 100Hz Update Rate
   TickType_t xLastWakeTime = xTaskGetTickCount();
+
+  float stepper_current_angle = g_current_angles[0]; // Local flat tracking for stepper
 
   for (;;)
   {
@@ -252,72 +256,107 @@ void task_motion_interpolator(void *pvParameters)
       continue;
 
     xSemaphoreTake(x_pose_mutex, portMAX_DELAY);
+    
+    // IIR Filter Factor (Smoothing)
+    // Speed Factor comes in "ms per degree" usually (e.g. 150).
+    // In new logic: Higher "Speed Factor" value means SLOWER reaction (Lower Alpha).
+    // Heuristic: alpha = K / speed_factor.
+    // If speed_factor = 150 -> we want soft smoothing. alpha ~ 0.05
+    // If speed_factor = 20 -> we want fast response. alpha ~ 0.5
+    // Let K = 10.0
+    // alpha = 10.0 / 150 = 0.066
+    // alpha = 10.0 / 20 = 0.5
+    // Clamp alpha between 0.001 and 1.0
+    float raw_alpha = 8.0f / (MAX(1.0f, g_move_duration_ms > 0 ? (float)g_move_duration_ms / 10.0f : 50.0f)); 
+    // Wait, g_move_duration_ms is now just misused as a storage for speed factor?
+    // Let's look at parse_command:
+    // It sets g_move_duration_ms based on max_angle * speed.
+    // This old logic depended on distance. We want independent speed setting.
+    // I'll grab speed directly from a global or infer it.
+    // Actually, let's use a fixed nice alpha for now, or assume g_move_duration_ms logic "sort of" works as a proxy for slowness.
+    // BUT, for "Move" command, duration was calculated.
+    // For slider dragging, duration might be small if delta is small?
+    // Better: use a constant smooth factor for "Organic" feel.
+    float alpha = 0.08f; // Tuned for "Very Smooth" feel @ 100Hz.
+    
+    // Check if we need to adjust speed dynamically?
+    // Let's stick to a fixed smooth alpha for "Organic" Mode requested by user.
+    
+    bool all_reached = true;
 
-    if (g_move_duration_ms == 0)
+    // --- Servos Interpolation ---
+    int pulses[SERVOS_NUMBER];
+    for (int i = 0; i < SERVOS_NUMBER; i++)
     {
-      xSemaphoreGive(x_pose_mutex);
-      continue;
+      float target = g_target_angles[i];
+      float current = g_current_angles[i];
+      float diff = target - current;
+
+      if (fabs(diff) > 0.05f) 
+      {
+        all_reached = false;
+        // Apply IIR Filter
+        g_current_angles[i] += diff * alpha;
+      }
+      else
+      {
+        g_current_angles[i] = target; // Snap to finish
+      }
+      
+      if (i > 0) // Servos start at index 1
+        pulses[i] = angleToPulse(g_current_angles[i], i);
     }
+    
+    // --- Stepper Logic ---
+    // Update local stepper float tracker
+    float step_target = g_target_angles[0];
+    float step_diff = step_target - stepper_current_angle;
+    if (fabs(step_diff) > 0.05f)
+        stepper_current_angle += step_diff * alpha;
+    else
+        stepper_current_angle = step_target;
+        
+    g_current_angles[0] = stepper_current_angle; // Update global for status reporting
 
-    unsigned long elapsed_time = millis() - g_move_start_time;
-    float fraction = (float)elapsed_time / (float)g_move_duration_ms;
-
-    if (fraction > 1.0f)
-      fraction = 1.0f;
-    float eased_fraction = easeInOutQuintic(fraction);
-
-    // Gripper Force Logic
-    if (g_grip_target_current_mA > 0 && fabsf(g_gripperCurrent_mA) > g_grip_target_current_mA)
-    {
-      float final_grip_angle = (g_current_angles[GRIPPER_SERVO_INDEX] * (1.0f - eased_fraction)) + (g_target_angles[GRIPPER_SERVO_INDEX] * eased_fraction);
-      g_current_angles[GRIPPER_SERVO_INDEX] = final_grip_angle;
-      g_target_angles[GRIPPER_SERVO_INDEX] = final_grip_angle;
-      g_grip_target_current_mA = -1.0f;
-    }
-
-    // Stepper Logic
-    long start_step_pos = (long)(g_current_angles[0] * STEPPER_STEPS_PER_DEGREE);
-    long end_step_pos = (long)(g_target_angles[0] * STEPPER_STEPS_PER_DEGREE);
-    long total_steps_for_move = end_step_pos - start_step_pos;
-    long current_target_step_pos = start_step_pos + (long)(total_steps_for_move * eased_fraction);
-    long steps_to_move = current_target_step_pos - g_stepper_current_step_pos;
+    long current_hw_steps = g_stepper_current_step_pos;
+    long target_hw_steps = (long)(stepper_current_angle * STEPPER_STEPS_PER_DEGREE);
+    long steps_to_move = target_hw_steps - current_hw_steps;
 
     if (steps_to_move != 0 && !g_collisionDetected)
     {
       digitalWrite(STEPPER_DIR_PIN, (steps_to_move > 0) ? (SERVO_INVERT[0] ? HIGH : LOW) : (SERVO_INVERT[0] ? LOW : HIGH));
-      long num_steps_to_pulse = abs(steps_to_move);
-      for (long i = 0; i < num_steps_to_pulse; i++)
+      long num_steps = abs(steps_to_move);
+      // Limit steps per loop to prevent blocking (max 5 steps per 10ms = 500 steps/sec)
+      if (num_steps > 5) num_steps = 5; 
+      
+      for (long k = 0; k < num_steps; k++)
       {
-        if (g_collisionDetected)
-          break;
         digitalWrite(STEPPER_STEP_PIN, HIGH);
         delayMicroseconds(STEPPER_PULSE_WIDTH_US);
         digitalWrite(STEPPER_STEP_PIN, LOW);
         delayMicroseconds(STEPPER_PULSE_DELAY_US);
       }
-      if (!g_collisionDetected)
-      {
-        g_stepper_current_step_pos = current_target_step_pos;
-      }
+      g_stepper_current_step_pos += (steps_to_move > 0) ? num_steps : -num_steps;
+    }
+    
+    // --- Gripper Current Force Logic ---
+    if (g_grip_target_current_mA > 0 && fabsf(g_gripperCurrent_mA) > g_grip_target_current_mA)
+    {
+       // If force exceeded, stop moving gripper (set target to current)
+       g_target_angles[GRIPPER_SERVO_INDEX] = g_current_angles[GRIPPER_SERVO_INDEX];
+       g_grip_target_current_mA = -1.0f;
     }
 
-    // Prepare I2C Pulses
-    int pulses[SERVOS_NUMBER];
-    for (int i = 1; i < SERVOS_NUMBER; i++)
-    {
-      float interpolated_angle = (g_current_angles[i] * (1.0f - eased_fraction)) + (g_target_angles[i] * eased_fraction);
-      pulses[i] = angleToPulse(interpolated_angle, i);
-    }
     xSemaphoreGive(x_pose_mutex);
 
+    // --- Hardware Write (I2C) ---
     // [SAFETY] Check BEFORE taking I2C Mutex
     if (g_collisionDetected)
       continue;
 
     // Try to take I2C Mutex
-    if (xSemaphoreTake(x_i2c_mutex, portMAX_DELAY) == pdTRUE)
+    if (xSemaphoreTake(x_i2c_mutex, pdMS_TO_TICKS(8)) == pdTRUE)
     {
-      // [SAFETY] Check AFTER taking I2C Mutex (in case we waited)
       if (!g_collisionDetected)
       {
         for (int i = 1; i < SERVOS_NUMBER; i++)
@@ -329,20 +368,6 @@ void task_motion_interpolator(void *pvParameters)
       }
       xSemaphoreGive(x_i2c_mutex);
     }
-
-    // Finalize Move
-    xSemaphoreTake(x_pose_mutex, portMAX_DELAY);
-    if (fraction >= 1.0f)
-    {
-      g_grip_target_current_mA = -1.0;
-      for (int i = 0; i < SERVOS_NUMBER; i++)
-      {
-        g_current_angles[i] = g_target_angles[i];
-      }
-      g_stepper_current_step_pos = end_step_pos;
-      g_move_duration_ms = 0;
-    }
-    xSemaphoreGive(x_pose_mutex);
   }
 }
 
@@ -711,8 +736,16 @@ void setup()
   ledcAttachPin(FAN_PWM_PIN, FAN_PWM_CHANNEL);
   ledcWrite(FAN_PWM_CHANNEL, g_fan_duty_cycle);
 
-  // Hardcoded calibration as requested
-  Serial.print("INFO: Zero-point: ");
+  // --- Auto-Calibrate Zero Point ---
+  Serial.print("INFO: Calibrating Current Sensor...");
+  long cal_val = 0;
+  for(int i=0; i<100; i++)
+  {
+      cal_val += analogRead(ACS712_PIN);
+      delay(2);
+  }
+  g_calibrated_zero_voltage = ((float)cal_val / 100.0f / 4095.0f) * 3.3f;
+  Serial.print(" Done. Zero-point: ");
   Serial.println(g_calibrated_zero_voltage, 4);
 
   // --- Restore Pose from EEPROM ---
