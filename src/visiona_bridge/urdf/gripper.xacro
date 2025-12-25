@@ -5,7 +5,7 @@
             <visual>
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
-                    <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/gripper_joint.stl"
+                    <mesh filename="../meshes/gripper_joint.stl"
                         scale="0.001 0.001 0.001" />
                 </geometry>
             </visual>
@@ -13,7 +13,7 @@
             <collision>
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
-                    <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/gripper_joint.stl"
+                    <mesh filename="../meshes/gripper_joint.stl"
                         scale="0.001 0.001 0.001" />
                 </geometry>
             </collision>
@@ -27,6 +27,7 @@
             <parent link="${parent_link}" />
             <child link="gripper_base" />
             <xacro:insert_block name="origin_block" />
+            <origin xyz="0 -0.085 0" rpy="3.14 0 0" />
 
             <axis xyz="0 1 0.0" />
             <limit lower="-3.0" upper="3.0" effort="100.0" velocity="10.0" />
@@ -38,14 +39,14 @@
             <visual>
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
-                    <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/gripper_left_finger.stl"
+                    <mesh filename="../meshes/gripper_left_finger.stl"
                         scale="0.001 0.001 0.001" />
                 </geometry>
             </visual>
             <collision>
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
-                    <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/gripper_left_finger.stl"
+                    <mesh filename="../meshes/gripper_left_finger.stl"
                         scale="0.001 0.001 0.001" />
                 </geometry>
             </collision>
@@ -60,14 +61,14 @@
 
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
-                    <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/gripper_right_finger.stl"
+                    <mesh filename="../meshes/gripper_right_finger.stl"
                         scale="0.001 0.001 0.001" />
                 </geometry>
             </visual>
             <collision>
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
-                    <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/gripper_right_finger.stl"
+                    <mesh filename="../meshes/gripper_right_finger.stl"
                         scale="0.001 0.001 0.001" />
                 </geometry>
             </collision>
