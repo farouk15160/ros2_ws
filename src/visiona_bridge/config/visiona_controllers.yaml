@@ -16,8 +16,7 @@ joint_trajectory_controller:
       - link_2_elbow_joint
       - link_3_wrist_joint
       - link_3_wrist_to_gripper_base_joint
-      - left_finger_joint
-      - right_finger_joint
+      - gripper
 
     command_interfaces:
       - position
@@ -32,5 +31,4 @@ joint_trajectory_controller:
       link_2_elbow_joint: {p: 1000.0, i: 0.01, d: 50.0}
       link_3_wrist_joint: {p: 1000.0, i: 0.01, d: 50.0}
       link_3_wrist_to_gripper_base_joint: {p: 100.0, i: 0.01, d: 10.0}
-      left_finger_joint: {p: 100.0, i: 0.01, d: 10.0}
-      right_finger_joint: {p: 100.0, i: 0.01, d: 10.0}
+      gripper: {p: 100.0, i: 0.01, d: 10.0}

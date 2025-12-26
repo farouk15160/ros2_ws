@@ -9,7 +9,6 @@
                         scale="0.001 0.001 0.001" />
                 </geometry>
             </visual>
-            <!-- Collision enabled -->
             <collision>
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
@@ -22,6 +21,17 @@
                 <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
             </inertial>
         </link>
+
+        <gazebo>
+            <plugin name="mimic_joint_plugin" filename="libgazebo_ros_mimic_joint_plugin.so">
+                <joint>gripper</joint>
+                <mimicJoint>right_finger_joint</mimicJoint>
+                <multiplier>-1.0</multiplier>
+                <offset>0.0</offset>
+                <maxEffort>100.0</maxEffort>
+                <hasPID>false</hasPID>
+            </plugin>
+        </gazebo>
 
         <joint name="${parent_link}_to_gripper_base_joint" type="revolute">
             <parent link="${parent_link}" />
@@ -77,13 +87,13 @@
             </inertial>
         </link>
 
-        <joint name="left_finger_joint" type="revolute">
+        <joint name="gripper" type="revolute">
             <parent link="gripper_base" />
             <child link="left_finger_link" />
             <origin xyz="0.0 0.0 0" rpy="0 0 0" />
             <axis xyz="0 0 1" />
             <limit lower="-1.0" upper="1" effort="100.0" velocity="10.0" />
-            <dynamics damping="1.0" friction="1.0" />
+            <dynamics damping="0.1" friction="0.1" />
 
         </joint>
 
@@ -93,9 +103,8 @@
             <origin xyz="0 0 0" rpy="0 0 0" />
             <axis xyz="0 0 1" />
             <limit lower="-1.0" upper="1" effort="100.0" velocity="10.0" />
-            <dynamics damping="1.0" friction="1.0" />
-
-            <mimic joint="left_finger_joint" multiplier="-1" offset="0.0" />
+            <dynamics damping="0.1" friction="0.1" />
+            <mimic joint="gripper" multiplier="-1" offset="0.0" />
         </joint>
 
     </xacro:macro>

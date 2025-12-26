@@ -94,17 +94,19 @@ def generate_launch_description():
     move_to_home = ExecuteProcess(
         cmd=['ros2', 'topic', 'pub', '--once', '/joint_trajectory_controller/joint_trajectory', 
              'trajectory_msgs/msg/JointTrajectory',
-             '{joint_names: ["link_1_shoulder_joint", "link_2_elbow_joint", "link_3_wrist_joint"], points: [{positions: [1.57, 1.57, 1.57], time_from_start: {sec: 1, nanosec: 0}}]}'],
+             '{joint_names: ["base_link_joint", "link_1_shoulder_joint", "link_2_elbow_joint", "link_3_wrist_joint", "link_3_wrist_to_gripper_base_joint", "gripper"], points: [{positions: [1.57, 1.57, 1.57, 1.57, 1.57, 1.57], time_from_start: {sec: 2, nanosec: 0}}]}'],
         output='screen',
         condition=LaunchConfigurationEquals('mode', 'sim')
     )
+
 
     # 4. RViz (Only if GUI=true)
     node_rviz = Node(
         package="rviz2",
         executable="rviz2",
         name="rviz2",
-        condition=IfCondition(gui)
+        condition=IfCondition(gui),
+        parameters=[{'use_sim_time': PythonExpression(["'", mode, "' == 'sim'"])}]
     )
 
     # 5. Web GUI / Real Robot Bridge
@@ -187,6 +189,7 @@ def generate_launch_description():
             ),
             condition=LaunchConfigurationEquals('mode', 'sim')
         ),
+      
         node_rviz,
         web_node
     ])

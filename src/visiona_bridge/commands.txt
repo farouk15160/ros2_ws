@@ -1,6 +1,4 @@
-to move the Robot in Real or Sim mode!
-
-
+Move to Flat/Bent (0.0)
 ros2 topic pub --once /joint_trajectory_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "
 joint_names:
 - base_link_joint
@@ -8,9 +6,21 @@ joint_names:
 - link_2_elbow_joint
 - link_3_wrist_joint
 - link_3_wrist_to_gripper_base_joint
-- left_finger_joint
+- gripper
 points:
-- positions: [3.0, -0.5, 0.5, 0.0, 0.3, -0.1]
-  time_from_start:
-    sec: 2
+- positions: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  time_from_start: {sec: 2}
+"
+# Move to Upright (1.57)
+ros2 topic pub --once /joint_trajectory_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "
+joint_names:
+- base_link_joint
+- link_1_shoulder_joint
+- link_2_elbow_joint
+- link_3_wrist_joint
+- link_3_wrist_to_gripper_base_joint
+- gripper
+points:
+- positions: [1.57, 1.57, 1.57, 1.57, 1.57, 0.0]
+  time_from_start: {sec: 2}
 "

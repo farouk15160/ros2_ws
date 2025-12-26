@@ -47,7 +47,7 @@
                 <joint_name>link_2_elbow_joint</joint_name>
                 <joint_name>link_3_wrist_joint</joint_name>
                 <joint_name>link_3_wrist_to_gripper_base_joint</joint_name>
-                <joint_name>left_finger_joint</joint_name>
+                <joint_name>gripper</joint_name>
             </plugin>
         </gazebo>
         

@@ -451,9 +451,13 @@ class RobotArmBridge(Node):
                 'link_2_elbow_joint', 
                 'link_3_wrist_joint', 
                 'link_3_wrist_to_gripper_base_joint', 
-                'left_finger_joint'
+                'gripper',
+                'right_finger_joint'
             ]
-            joint_state_msg.position = [self.deg_to_rad(angle) for angle in self.current_joint_angles_deg]
+            positions_rad = [self.deg_to_rad(angle) for angle in self.current_joint_angles_deg]
+            # right_finger_joint is mimic of left_finger_joint (index 5) with multiplier -1
+            positions_rad.append(-positions_rad[5])
+            joint_state_msg.position = positions_rad
 
             if self.should_publish_joint_states:
                 self.joint_state_publisher.publish(joint_state_msg)
