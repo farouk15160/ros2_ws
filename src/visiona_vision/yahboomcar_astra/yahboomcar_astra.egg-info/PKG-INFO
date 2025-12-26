@@ -1,0 +1,13 @@
+Metadata-Version: 2.4
+Name: yahboomcar_astra
+Version: 0.0.0
+Summary: TODO: Package description
+Maintainer: nx-ros2
+Maintainer-email: 13377528435@sina.cn
+License: TODO: License declaration
+Requires-Dist: setuptools
+Dynamic: license
+Dynamic: maintainer
+Dynamic: maintainer-email
+Dynamic: requires-dist
+Dynamic: summary

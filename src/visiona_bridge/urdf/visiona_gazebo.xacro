@@ -51,17 +51,6 @@
             </plugin>
         </gazebo>
         
-        <!-- Mimic Joint Plugin for Right Finger -->
-        <gazebo>
-            <plugin name="mimic_joint_plugin" filename="libgazebo_ros_mimic_joint_plugin.so">
-                <joint>left_finger_joint</joint>
-                <mimicJoint>right_finger_joint</mimicJoint>
-                <multiplier>-1.0</multiplier>
-                <offset>0.0</offset>
-                <sensitiveness>0.0</sensitiveness>
-                <maxEffort>100.0</maxEffort>
-            </plugin>
-        </gazebo>
     </xacro:if>
 
     <gazebo>

@@ -1,7 +1,7 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, RegisterEventHandler, LogInfo, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, RegisterEventHandler, LogInfo, OpaqueFunction, ExecuteProcess
 from launch.conditions import IfCondition, UnlessCondition, LaunchConfigurationEquals
 from launch.substitutions import LaunchConfiguration, PythonExpression, Command, FindExecutable
 from launch_ros.actions import Node
@@ -66,7 +66,8 @@ def generate_launch_description():
     spawn_entity = Node(
         package='gazebo_ros', 
         executable='spawn_entity.py',
-        arguments=['-topic', 'robot_description', '-entity', 'Visiona', '-timeout', '90'],
+        arguments=['-topic', 'robot_description', '-entity', 'Visiona', '-timeout', '90',
+                   '-x', '0.0', '-y', '0.0', '-z', '0.05'],
         output='screen',
         condition=IfCondition(PythonExpression(["'", mode, "' in ['sim', 'real']"]))
     )
@@ -84,6 +85,16 @@ def generate_launch_description():
         package='controller_manager',
         executable='spawner',
         arguments=['joint_trajectory_controller', '--controller-manager', '/controller_manager'],
+        output='screen',
+        condition=LaunchConfigurationEquals('mode', 'sim')
+    )
+
+    # Move to Home Position (Workaround for spawn_entity -J issues)
+    # Publishes a single trajectory point to move joints to 1.57 rad.
+    move_to_home = ExecuteProcess(
+        cmd=['ros2', 'topic', 'pub', '--once', '/joint_trajectory_controller/joint_trajectory', 
+             'trajectory_msgs/msg/JointTrajectory',
+             '{joint_names: ["link_1_shoulder_joint", "link_2_elbow_joint", "link_3_wrist_joint"], points: [{positions: [1.57, 1.57, 1.57], time_from_start: {sec: 1, nanosec: 0}}]}'],
         output='screen',
         condition=LaunchConfigurationEquals('mode', 'sim')
     )
@@ -166,6 +177,13 @@ def generate_launch_description():
             event_handler=OnProcessExit(
                 target_action=spawn_joint_state_broadcaster,
                 on_exit=[spawn_joint_trajectory_controller],
+            ),
+            condition=LaunchConfigurationEquals('mode', 'sim')
+        ),
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=spawn_joint_trajectory_controller,
+                on_exit=[move_to_home],
             ),
             condition=LaunchConfigurationEquals('mode', 'sim')
         ),
