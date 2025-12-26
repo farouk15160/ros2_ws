@@ -22,15 +22,19 @@
     </gazebo>
     <gazebo reference="gripper_base">
         <material>Gazebo/Green</material>
-        <self_collide>false</self_collide>
+        <self_collide>true</self_collide>
     </gazebo>
     <gazebo reference="left_finger_link">
         <material>Gazebo/Green</material>
-        <self_collide>false</self_collide>
+        <self_collide>true</self_collide>
+        <mu1>1000.0</mu1>
+        <mu2>1000.0</mu2>
     </gazebo>
     <gazebo reference="right_finger_link">
         <material>Gazebo/Green</material>
-        <self_collide>false</self_collide>
+        <self_collide>true</self_collide>
+        <mu1>1000.0</mu1>
+        <mu2>1000.0</mu2>
     </gazebo>
 
     <xacro:if value="$(arg use_sim)">

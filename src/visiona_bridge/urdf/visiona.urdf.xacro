@@ -14,7 +14,7 @@
         <visual name="base">
             <origin xyz="0 0 0 " rpy="0 0 0 " />
             <geometry>
-                <mesh filename="../meshes/base.stl" scale="0.001 0.001 0.001" />
+                <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/base.stl" scale="0.001 0.001 0.001" />
             </geometry>
         </visual>
 
@@ -58,7 +58,7 @@
         <visual name="base_link">
             <origin xyz="0 0 0.075 " rpy="0 0 0 " />
             <geometry>
-                <mesh filename="../meshes/base_link.stl"
+                <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/base_link.stl"
                     scale="0.001 0.001 0.001" />
             </geometry>
         </visual>
@@ -79,7 +79,7 @@
         <visual name="link_1_shoulder">
             <origin xyz="0 0 0 " rpy="0 0 0 " />
             <geometry>
-                <mesh filename="../meshes/link_1_shoulder.stl"
+                <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/link_1_shoulder.stl"
                     scale="0.001 0.001 0.001" />
             </geometry>
 
@@ -101,7 +101,7 @@
         <visual name="link_2_elbow">
             <origin xyz="0 0 0 " rpy="1.57 0 0 " />
             <geometry>
-                <mesh filename="../meshes/link_2_elbow.stl"
+                <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/link_2_elbow.stl"
                     scale="0.001 0.001 0.001" />
             </geometry>
         </visual>
@@ -122,7 +122,7 @@
         <visual name="link_3_wrist">
             <origin xyz="0 0 0 " rpy="1.57 0 0 " />
             <geometry>
-                <mesh filename="../meshes/link_3_wrist.stl"
+                <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/link_3_wrist.stl"
                     scale="0.001 0.001 0.001" />
             </geometry>
         </visual>
@@ -162,7 +162,7 @@
         <axis xyz="0.0 0 1" />
         <limit lower="-3.14" upper="3.14" effort="100.0" velocity="10.0" />
 
-        <!-- <dynamics damping="10" friction="10" /> -->
+        <dynamics damping="10" friction="10" />
 
     </joint>
 
@@ -172,7 +172,7 @@
         <child link="link_1_shoulder" />
         <axis xyz="1 0 0.0" />
         <limit lower="-1.57" upper="1.57" effort="100.0" velocity="10.0" />
-        <!-- <dynamics damping="10" friction="10" /> -->
+        <dynamics damping="10" friction="10" />
 
     </joint>
 
@@ -182,7 +182,7 @@
         <child link="link_2_elbow" />
         <axis xyz="1 0 0.0" />
         <limit lower="-3.14" upper="3.14" effort="100.0" velocity="10.0" />
-        <!-- <dynamics damping="10" friction="10" /> -->
+        <dynamics damping="10" friction="10" />
 
     </joint>
 
@@ -192,13 +192,14 @@
         <child link="link_3_wrist" />
         <axis xyz="1 0 0.0" />
         <limit lower="-3.14" upper="3.14" effort="100.0" velocity="10.0" />
-        <!-- <dynamics damping="10" friction="10" /> -->
+        <dynamics damping="10" friction="10" />
 
     </joint>
 
 
     <xacro:gripper parent_link="link_3_wrist">
-        <origin xyz="0 0 0.082" rpy="1.5707963 0 0" />
+        <origin xyz="0 -0.085 0" rpy="3.14 0 0" />
+
     </xacro:gripper>
 
     <xacro:include filename="visiona_gazebo.xacro" />
