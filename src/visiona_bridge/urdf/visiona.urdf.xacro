@@ -106,12 +106,12 @@
             </geometry>
         </visual>
 
-        <collision>
-            <origin xyz="-0.00 0 0.088" rpy="1.57 0 0 " />
+        <!-- <collision>
+            <origin xyz="0.0 0.0 0.0" rpy="1.57 0 0 " />
             <geometry>
                 <box size="0.027 0.06 0.115" />
             </geometry>
-        </collision>
+        </collision> -->
     </link>
     <link name="link_3_wrist">
         <inertial>
@@ -120,14 +120,19 @@
             <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01" />
         </inertial>
         <visual name="link_3_wrist">
-            <origin xyz="0 0 0 " rpy="1.57 0 0 " />
+            <origin xyz="0 0.005 0 " rpy="1.57 0 0 " />
             <geometry>
                 <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/link_3_wrist.stl"
                     scale="0.001 0.001 0.001" />
             </geometry>
         </visual>
-
         <collision>
+            <origin xyz="0.0 -0.03 0.02" rpy="1.57 0 0 " />
+            <geometry>
+                <box size="0.08 0.12 0.12" />
+            </geometry>
+        </collision>
+        <!-- <collision>
             <origin xyz="-0.00 0 0.058" rpy="1.57 0 0 " />
             <geometry>
                 <box size="0.067 0.06 0.045" />
@@ -144,7 +149,7 @@
             <geometry>
                 <box size="0.018 0.06 0.06" />
             </geometry>
-        </collision>
+        </collision> -->
     </link>
 
 
@@ -177,7 +182,7 @@
     </joint>
 
     <joint name="link_2_elbow_joint" type="revolute">
-        <origin xyz="0 0 0.185 " rpy="-1.57 0 3.14" />
+        <origin xyz="0 0 0.185 " rpy="-1.57 0 0" />
         <parent link="link_1_shoulder" />
         <child link="link_2_elbow" />
         <axis xyz="1 0 0.0" />
@@ -187,7 +192,7 @@
     </joint>
 
     <joint name="link_3_wrist_joint" type="revolute">
-        <origin xyz="0 -0.119 0 " rpy="-3.14 0 0" />
+        <origin xyz="0 -0.119 0 " rpy="0 0 0" />
         <parent link="link_2_elbow" />
         <child link="link_3_wrist" />
         <axis xyz="1 0 0.0" />

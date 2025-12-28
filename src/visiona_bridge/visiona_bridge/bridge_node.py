@@ -481,11 +481,15 @@ class RobotArmBridge(Node):
         """Publishes a JointTrajectory message to drive Gazebo to the current real robot state."""
         traj_msg = JointTrajectory()
         # traj_msg.header.stamp = self.get_clock().now().to_msg() # Removed to prevent SimTime mismatch (exec immediately)
-        traj_msg.header.frame_id = 'base_link' # gazebo_ros_joint_pose_trajectory needs a frame (usually ignored for joints but required by validation?)
-        traj_msg.joint_names = joint_state_msg.name
+        traj_msg.header.frame_id = 'base_link' 
+        
+        # Filter out 'right_finger_joint' (index 6) which is a mimic and not in the controller
+        # We assume the order is fixed as defined in _update_state_from_status
+        known_joints = 6
+        traj_msg.joint_names = joint_state_msg.name[:known_joints]
         
         point = JointTrajectoryPoint()
-        point.positions = joint_state_msg.position
+        point.positions = joint_state_msg.position[:known_joints]
         point.time_from_start.sec = 0
         point.time_from_start.nanosec = 50000000 # 50ms to reach target (immediate)
         
