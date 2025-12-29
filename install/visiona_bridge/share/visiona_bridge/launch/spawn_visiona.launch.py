@@ -1,1 +1,0 @@
-/home/farouk/ros2_ws/build/visiona_bridge/launch/spawn_visiona.launch.py
