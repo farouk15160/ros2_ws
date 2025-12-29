@@ -19,3 +19,21 @@ log/
 # Python
 __pycache__/
 *.py[cod]
+
+# C++ Compiled Object files
+*.o
+*.obj
+
+# Static libraries (usually generated during build)
+*.a
+*.lib
+
+# Editor temp files
+*~
+*.swp
+
+# Generated CMake files (in case they appear in src)
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
