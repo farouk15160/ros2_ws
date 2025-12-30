@@ -4,11 +4,14 @@ from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO
 from ament_index_python.packages import get_package_share_directory
 
+from flask_cors import CORS
+
 # Import constants (for logging setup)
 from .bridge_constants import *
 
 # This socketio object will be imported by the main launcher
-socketio = SocketIO(async_mode='threading', ping_timeout=10, ping_interval=5)
+# CORS allowed origins * is crucial for remote access
+socketio = SocketIO(async_mode='threading', ping_timeout=10, ping_interval=5, cors_allowed_origins="*")
 
 def create_app(ros_node):
     """
@@ -27,6 +30,7 @@ def create_app(ros_node):
         os.makedirs(template_dir, exist_ok=True)
     
     app = Flask(__name__, static_folder=static_dir, template_folder=template_dir)
+    CORS(app, resources={r"/*": {"origins": "*"}}) # Allow all origins for API calls
     
     if ros_node:
         ros_node.socketio = socketio

@@ -16,6 +16,10 @@ def generate_launch_description():
         'gui', default_value='true',
         description='Launch specific GUI tools (RViz and Web App)'
     )
+    launch_rviz_arg = DeclareLaunchArgument(
+        'launch_rviz', default_value='true',
+        description='Whether to launch RViz (can be disabled if using external RViz)'
+    )
     mode_arg = DeclareLaunchArgument(
         'mode', default_value='sim',
         description='Execution mode: "sim" (Gazebo), "real" (Real Robot), "fake" (Mock Hardware)'
@@ -27,6 +31,7 @@ def generate_launch_description():
     
     # --- Configurations ---
     gui = LaunchConfiguration('gui')
+    launch_rviz = LaunchConfiguration('launch_rviz')
     mode = LaunchConfiguration('mode')
     
     # Handle alias: if model != '', set mode = model
@@ -67,7 +72,7 @@ def generate_launch_description():
         executable='robot_state_publisher',
         name='robot_state_publisher',
         output='screen',
-        parameters=[robot_description, {'use_sim_time': PythonExpression(["'", mode, "' == 'sim'"])}]
+        parameters=[robot_description, {'use_sim_time': PythonExpression(["'", mode, "' in ['sim', 'real']"])}]
     )
 
     # 2. Gazebo (In SIM or REAL mode for Digital Twin)
@@ -117,21 +122,22 @@ def generate_launch_description():
         condition=LaunchConfigurationEquals('mode', 'sim')
     )
 
-
+    
     # 4. RViz (Only if GUI=true)
     node_rviz = Node(
         package="rviz2",
         executable="rviz2",
         name="rviz2",
-        condition=IfCondition(gui),
-        parameters=[{'use_sim_time': PythonExpression(["'", mode, "' == 'sim'"])}]
+        condition=IfCondition(launch_rviz),
+        parameters=[{'use_sim_time': PythonExpression(["'", mode, "' in ['sim', 'real']"])}]
     )
 
     # 5. Web GUI / Real Robot Bridge
     bridge_params = [{
         'publish_joint_states': PythonExpression(["'true' if '", mode, "' != 'sim' else 'false'"]),
         'sync_gazebo': PythonExpression(["'true' if '", mode, "' == 'real' else 'false'"]),
-        'serial_port': '/dev/ttyUSB0' # Default
+        'serial_port': '/dev/ttyUSB0', # Default
+        'use_sim_time': PythonExpression(["'true' if '", mode, "' in ['sim', 'real'] else 'false'"])
     }]
 
     web_node = Node(
@@ -150,7 +156,7 @@ def generate_launch_description():
         model_arg,
         set_mode, # Apply alias logic first
         node_robot_state_publisher,
-        gazebo,
+        # gazebo, dont remove 
         spawn_entity,
         
         # HANDLER FOR SIM: Entity -> Broadcaster -> Controller -> Home

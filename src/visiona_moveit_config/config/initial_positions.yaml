@@ -1,0 +1,9 @@
+# Default initial positions for visiona's ros2_control fake system
+
+initial_positions:
+  base_link_joint: 0
+  gripper: 0
+  link_1_shoulder_joint: 0
+  link_2_elbow_joint: 0
+  link_3_wrist_joint: 0
+  link_3_wrist_to_gripper_base_joint: 0

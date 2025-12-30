@@ -98,6 +98,9 @@ sudo apt install -y \
     gazebo11 \
     libgazebo11-dev \
     ros-humble-gazebo-dev \
+    ros-humble-ros2-control \
+    ros-humble-ros2-controllers \
+    ros-humble-gazebo-ros2-control \
     ros-humble-robot-state-publisher \
     ros-humble-joint-state-publisher \
     ros-dev-tools \
@@ -108,7 +111,9 @@ sudo apt install -y \
     libopencv-dev \
     git \
     cmake \
-    build-essential
+    build-essential \
+    ros-humble-moveit
+
 
 # ==============================================================================
 # 3. Clone Missing Sources (Gazebo Bridge)
@@ -136,7 +141,7 @@ fi
 rosdep update || warn "rosdep update failed"
 
 log "Installing Python Dependencies..."
-pip3 install Flask Flask-SocketIO python-socketio pyserial gunicorn numpy opencv-python
+pip3 install Flask Flask-SocketIO python-socketio pyserial gunicorn numpy opencv-python flask-cors platformio   
 
 # ==============================================================================
 # 4. Pangolin Installation (Manual Build)
@@ -243,7 +248,8 @@ if ! grep -q "GAZEBO_MODEL_PATH" ~/.bashrc; then
     echo 'export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(ros2 pkg prefix visiona_bridge)/share' >> ~/.bashrc
 fi
 
-
+# 1. Disable online model lookup (prevents the crash)
+export GAZEBO_MODEL_DATABASE_URI=""
 log "========================================================"
 log " BUILD COMPLETE SUCCESSFULLY"
 log "========================================================"

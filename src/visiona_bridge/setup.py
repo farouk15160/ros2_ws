@@ -42,6 +42,7 @@ setup(
     description='ROS2 bridge for the Robot arm.',
     license='TODO: License declaration',
     tests_require=['pytest'],
+    scripts=['scripts/moveit_homer.py'],
     entry_points={
         'console_scripts': [
             # Entry point for the new Web GUI node

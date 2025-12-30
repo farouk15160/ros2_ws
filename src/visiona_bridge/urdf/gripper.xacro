@@ -22,6 +22,9 @@
             </inertial>
         </link>
 
+
+
+
         <gazebo>
             <plugin name="mimic_joint_plugin" filename="libgazebo_ros_mimic_joint_plugin.so">
                 <joint>gripper</joint>
