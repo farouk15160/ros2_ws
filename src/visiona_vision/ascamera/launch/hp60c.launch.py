@@ -14,7 +14,7 @@ def generate_launch_description():
         parameters=[
             {"usb_bus_no": -1},
             {"usb_path": "null"},
-            {"confiPath": "/home/farouk/ascam_ros2_ws/src/ascamera/configurationfiles"},
+            {"confiPath": "/home/farouk/ros2_ws/src/visiona_vision/ascamera/configurationfiles"},
             {"color_pcl": False},
             {"pub_tfTree": True},
             {"depth_width": 640},
