@@ -14,7 +14,8 @@
         <visual name="base">
             <origin xyz="0 0 0 " rpy="0 0 0 " />
             <geometry>
-                <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/base.stl" scale="0.001 0.001 0.001" />
+                <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/base.stl"
+                    scale="0.001 0.001 0.001" />
             </geometry>
         </visual>
 
@@ -66,7 +67,7 @@
         <collision>
             <origin xyz="-0.005 0 0.14 " rpy="0 0 0 " />
             <geometry>
-                <cylinder length="0.076" radius="0.06" />
+                <cylinder length="0.076" radius="0.057" />
             </geometry>
         </collision>
     </link>
@@ -79,16 +80,17 @@
         <visual name="link_1_shoulder">
             <origin xyz="0 0 0 " rpy="0 0 0 " />
             <geometry>
-                <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/link_1_shoulder.stl"
+                <mesh
+                    filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/link_1_shoulder.stl"
                     scale="0.001 0.001 0.001" />
             </geometry>
 
         </visual>
 
         <collision>
-            <origin xyz="-0.002 0 0.13" rpy="0 0 0 " />
+            <origin xyz="-0.002 0 0.1" rpy="0 0 0 " />
             <geometry>
-                <box size="0.07 0.07 0.165" />
+                <box size="0.07 0.07 0.23" />
             </geometry>
         </collision>
     </link>
@@ -101,15 +103,16 @@
         <visual name="link_2_elbow">
             <origin xyz="0 0 0 " rpy="1.57 0 0 " />
             <geometry>
-                <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/link_2_elbow.stl"
+                <mesh
+                    filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/link_2_elbow.stl"
                     scale="0.001 0.001 0.001" />
             </geometry>
         </visual>
 
         <collision>
-            <origin xyz="0.0 0.0 0.0" rpy="1.57 0 0 " />
+            <origin xyz="0.0 -0.085 0.0" rpy="1.57 0 0 " />
             <geometry>
-                <box size="0.027 0.06 0.115" />
+                <box size="0.027 0.06 0.12" />
             </geometry>
         </collision>
     </link>
@@ -122,34 +125,30 @@
         <visual name="link_3_wrist">
             <origin xyz="0 0.005 0 " rpy="1.57 0 0 " />
             <geometry>
-                <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/link_3_wrist.stl"
+                <mesh
+                    filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/link_3_wrist.stl"
                     scale="0.001 0.001 0.001" />
             </geometry>
         </visual>
         <collision>
-            <origin xyz="0.0 -0.03 0.02" rpy="1.57 0 0 " />
+            <origin xyz="0 -0.03 0" rpy="0 0 0 " />
             <geometry>
-                <box size="0.08 0.12 0.12" />
-            </geometry>
-        </collision>
-        <!-- <collision>
-            <origin xyz="-0.00 0 0.058" rpy="1.57 0 0 " />
-            <geometry>
-                <box size="0.067 0.06 0.045" />
+                <box size="0.068 0.12 0.06" />
             </geometry>
         </collision>
         <collision>
-            <origin xyz="-0.027 0 0.003" rpy="1.57 0 0 " />
+            <origin xyz="0 -0.075 -0.04" rpy="0 0 0 " />
             <geometry>
-                <box size="0.018 0.06 0.06" />
+                <box size="0.04 0.02 0.03" />
             </geometry>
         </collision>
         <collision>
-            <origin xyz="0.027 0 0.003" rpy="1.57 0 0 " />
+            <origin xyz="0 -0.06 0.055" rpy="0 0 0 " />
             <geometry>
-                <box size="0.018 0.06 0.06" />
+                <box size="0.08 0.04 0.05" />
             </geometry>
-        </collision> -->
+        </collision>
+
     </link>
 
 
@@ -186,7 +185,7 @@
         <parent link="link_1_shoulder" />
         <child link="link_2_elbow" />
         <axis xyz="1 0 0.0" />
-        <limit lower="0.0" upper="3.14" effort="100.0" velocity="10.0" />
+        <limit lower="-3.14" upper="3.14" effort="100.0" velocity="10.0" />
         <dynamics damping="1.0" friction="1.0" />
 
     </joint>
@@ -196,47 +195,45 @@
         <parent link="link_2_elbow" />
         <child link="link_3_wrist" />
         <axis xyz="1 0 0.0" />
-        <limit lower="0.0" upper="3.14" effort="100.0" velocity="10.0" />
+        <limit lower="-3.14" upper="3.14" effort="100.0" velocity="10.0" />
         <dynamics damping="1.0" friction="1.0" />
 
     </joint>
 
-
+    
     <xacro:gripper parent_link="link_3_wrist">
         <origin xyz="0 -0.085 0" rpy="3.14 -1.57 0" />
 
     </xacro:gripper>
 
-    <!-- Camera Link -->
     <link name="camera_link">
         <visual>
             <geometry>
-                <box size="0.05 0.05 0.05"/>
+                <box size="0.09 0.01 0.02" />
             </geometry>
             <material name="black">
-                <color rgba="0 0 0 1"/>
+                <color rgba="0 0 0 1" />
             </material>
         </visual>
         <collision>
             <geometry>
-                <box size="0.05 0.05 0.05"/>
+                <!-- <origin xyz="0 0 0.5" rpy="0 0 0 " /> -->
+                <box size="0.09 0.01 0.02" />
             </geometry>
         </collision>
     </link>
 
     <joint name="camera_joint" type="fixed">
-        <parent link="link_3_wrist"/>
-        <child link="camera_link"/>
-        <!-- Adjust origin to place "on top end in the middle" -->
-        <!-- Based on link_3_wrist dimensions, placing it slightly offset -->
-        <origin xyz="0 -0.05 0.1" rpy="0 0 0"/> 
+        <parent link="link_3_wrist" />
+        <child link="camera_link" />
+        <origin xyz="0 -0.07 0.069" rpy="0 0 0" />
     </joint>
 
-    <link name="camera_depth_frame"/>
+    <link name="camera_depth_frame" />
     <joint name="camera_depth_joint" type="fixed">
-        <parent link="camera_link"/>
-        <child link="camera_depth_frame"/>
-        <origin xyz="0 0 0" rpy="-1.57 0 -1.57"/>
+        <parent link="camera_link" />
+        <child link="camera_depth_frame" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
     </joint>
 
     <xacro:include filename="visiona_gazebo.xacro" />
