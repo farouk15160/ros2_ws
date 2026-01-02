@@ -125,6 +125,16 @@ def create_app(ros_node):
         if ros_node: ros_node.kill_motors_from_gui()
         return jsonify({"status": "ok"})
 
+    @app.route('/api/jog', methods=['POST'])
+    def jog_cartesian_api():
+        data = request.json
+        dx = data.get('x', 0.0)
+        dy = data.get('y', 0.0)
+        dz = data.get('z', 0.0)
+        if ros_node:
+            ros_node.jog_cartesian(dx, dy, dz)
+        return jsonify({"status": "ok"})
+
     # --- NEW ROUTE: Set Collision Safety ---
     @app.route('/api/set_collision_safety', methods=['POST'])
     def set_collision_safety():

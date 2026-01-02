@@ -845,520 +845,513 @@
         document.getElementById('cart-z').innerText = data.z.toFixed(3);
       });
 
-      function jog(x, y, z) {
-        fetch('/api/jog', {
-          socket.on("cartesian_pose", (data) => {
-            document.getElementById('cart-x').innerText = data.x.toFixed(3);
-            document.getElementById('cart-y').innerText = data.y.toFixed(3);
-            document.getElementById('cart-z').innerText = data.z.toFixed(3);
-          });
-        }
+    }
 
     function jog(x, y, z) {
-            fetch('/api/jog', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ x: x, y: y, z: z })
-            });
-          }
+      fetch('/api/jog', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ x: x, y: y, z: z })
+      });
+    }
 
     // --- initializeGui ---
     function initializeGui() {
-            if (isGuiInitialized) return;
+      if (isGuiInitialized) return;
 
-            const slidersContainer = document.getElementById("joint-sliders");
-            const statusContainer = document.getElementById("joint-status-display");
-            const limitsContainer = document.getElementById("limit-config-grid");
+      const slidersContainer = document.getElementById("joint-sliders");
+      const statusContainer = document.getElementById("joint-status-display");
+      const limitsContainer = document.getElementById("limit-config-grid");
 
-            [
-              "threshold-input",
-              "dev-threshold-input",
-              "gripper-angle-input",
-              "gripper-current-input",
-              "sequence-delay",
-              "position-name",
-              "sequence-filename",
-            ].forEach((id) => {
-              const input = document.getElementById(id);
-              if (input) {
-                input.addEventListener("focus", () => (activeInput = id));
-                input.addEventListener("blur", () => {
-                  if (activeInput === id) activeInput = null;
-                });
-              }
-            });
+      [
+        "threshold-input",
+        "dev-threshold-input",
+        "gripper-angle-input",
+        "gripper-current-input",
+        "sequence-delay",
+        "position-name",
+        "sequence-filename",
+      ].forEach((id) => {
+        const input = document.getElementById(id);
+        if (input) {
+          input.addEventListener("focus", () => (activeInput = id));
+          input.addEventListener("blur", () => {
+            if (activeInput === id) activeInput = null;
+          });
+        }
+      });
 
-            JOINT_NAMES.forEach((name, i) => {
-              slidersContainer.innerHTML += `<div class="control-group"><label for="j${i}">${name} (J${i}): <span id="j${i}-value" class="value-display">90</span>°</label><input type="range" id="j${i}" value="90"></div>`;
-              statusContainer.innerHTML += `<div>${name}: <span id="s${i}" class="status-value">0.00</span></div>`;
-              limitsContainer.innerHTML += `<label for="min-j${i}">J${i}:</label><input type="number" id="min-j${i}" value="0"><input type="number" id="max-j${i}" value="180">`;
-            });
+      JOINT_NAMES.forEach((name, i) => {
+        slidersContainer.innerHTML += `<div class="control-group"><label for="j${i}">${name} (J${i}): <span id="j${i}-value" class="value-display">90</span>°</label><input type="range" id="j${i}" value="90"></div>`;
+        statusContainer.innerHTML += `<div>${name}: <span id="s${i}" class="status-value">0.00</span></div>`;
+        limitsContainer.innerHTML += `<label for="min-j${i}">J${i}:</label><input type="number" id="min-j${i}" value="0"><input type="number" id="max-j${i}" value="180">`;
+      });
 
-            JOINT_NAMES.forEach((_, i) => {
-              const slider = document.getElementById(`j${i}`);
-              slider.addEventListener("input", (e) => {
-                document.getElementById(`j${i}-value`).textContent = e.target.value;
-                sendJointCommandDebounced();
-              });
-              slider.addEventListener(
-                "mousedown",
-                () => (activeSlider = slider.id)
-              );
-              document.addEventListener("mouseup", () => {
-                if (activeSlider === slider.id) activeSlider = null;
-              });
-              const minInput = document.getElementById(`min-j${i}`);
-              minInput.addEventListener("focus", () => (activeInput = minInput.id));
-              minInput.addEventListener("blur", () => {
-                if (activeInput === minInput.id) activeInput = null;
-              });
-              const maxInput = document.getElementById(`max-j${i}`);
-              maxInput.addEventListener("focus", () => (activeInput = maxInput.id));
-              maxInput.addEventListener("blur", () => {
-                if (activeInput === maxInput.id) activeInput = null;
-              });
-            });
+      JOINT_NAMES.forEach((_, i) => {
+        const slider = document.getElementById(`j${i}`);
+        slider.addEventListener("input", (e) => {
+          document.getElementById(`j${i}-value`).textContent = e.target.value;
+          sendJointCommandDebounced();
+        });
+        slider.addEventListener(
+          "mousedown",
+          () => (activeSlider = slider.id)
+        );
+        document.addEventListener("mouseup", () => {
+          if (activeSlider === slider.id) activeSlider = null;
+        });
+        const minInput = document.getElementById(`min-j${i}`);
+        minInput.addEventListener("focus", () => (activeInput = minInput.id));
+        minInput.addEventListener("blur", () => {
+          if (activeInput === minInput.id) activeInput = null;
+        });
+        const maxInput = document.getElementById(`max-j${i}`);
+        maxInput.addEventListener("focus", () => (activeInput = maxInput.id));
+        maxInput.addEventListener("blur", () => {
+          if (activeInput === maxInput.id) activeInput = null;
+        });
+      });
 
-            document.addEventListener("mouseup", () => {
-              activeSlider = null;
-            });
+      document.addEventListener("mouseup", () => {
+        activeSlider = null;
+      });
 
-            const speedSlider = document.getElementById("speed-slider");
-            speedSlider.addEventListener("input", (e) => {
-              document.getElementById("speed-value").textContent = e.target.value;
-              setSpeedDebounced();
-            });
-            speedSlider.addEventListener(
-              "mousedown",
-              () => (activeSlider = speedSlider.id)
-            );
+      const speedSlider = document.getElementById("speed-slider");
+      speedSlider.addEventListener("input", (e) => {
+        document.getElementById("speed-value").textContent = e.target.value;
+        setSpeedDebounced();
+      });
+      speedSlider.addEventListener(
+        "mousedown",
+        () => (activeSlider = speedSlider.id)
+      );
 
-            const fanSlider = document.getElementById("fan-speed-slider");
-            fanSlider.addEventListener("input", (e) => {
-              document.getElementById("fan-speed-value").textContent =
-                e.target.value;
-              setFanSpeedDebounced();
-            });
-            fanSlider.addEventListener(
-              "mousedown",
-              () => (activeSlider = fanSlider.id)
-            );
+      const fanSlider = document.getElementById("fan-speed-slider");
+      fanSlider.addEventListener("input", (e) => {
+        document.getElementById("fan-speed-value").textContent =
+          e.target.value;
+        setFanSpeedDebounced();
+      });
+      fanSlider.addEventListener(
+        "mousedown",
+        () => (activeSlider = fanSlider.id)
+      );
 
-            isGuiInitialized = true;
-            console.log("GUI Initialized");
+      isGuiInitialized = true;
+      console.log("GUI Initialized");
 
-            updateStatusUI();
-            openTab(null, "tab-control");
-          }
+      updateStatusUI();
+      openTab(null, "tab-control");
+    }
 
     const logMessage = (level, message) => {
-          const logBox = document.getElementById("log-box");
-          if (!logBox) return;
-          const timestamp = new Date().toLocaleTimeString();
-          const p = document.createElement("p");
-          p.className = `log-${level}`;
-          p.textContent = `[${timestamp}] ${message}`;
-          logBox.appendChild(p);
-          logBox.scrollTop = logBox.scrollHeight;
-        };
-        const apiPost = async (endpoint, body = {}) => {
-          try {
-            const response = await fetch(endpoint, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(body),
-            });
-            if (!response.ok) {
-              logMessage(
-                "error",
-                `API Request Failed: ${endpoint} - ${response.status} ${response.statusText}`
-              );
-              console.error(
-                "API Error Response:",
-                await response.text().catch(() => "Could not read error body")
-              );
-            }
-          } catch (error) {
-            console.error("API Post Error:", error);
-            logMessage(
-              "error",
-              `API Request Failed: ${endpoint} - ${error.message}`
-            );
-          }
-        };
-
-        const sendJointCommandDebounced = () => {
-          if (isPlayingSequence) return;
-          clearTimeout(jointSliderTimeout);
-          jointSliderTimeout = setTimeout(sendAllJoints, 50);
-        };
-        const setSpeedDebounced = () => {
-          clearTimeout(speedSliderTimeout);
-          speedSliderTimeout = setTimeout(setSpeed, 100);
-        };
-        const setFanSpeedDebounced = () => {
-          clearTimeout(fanSliderTimeout);
-          fanSliderTimeout = setTimeout(setFanSpeed, 100);
-        };
-
-        const sendAllJoints = () => {
-          if (isPlayingSequence) return;
-          const angles = JOINT_NAMES.map((_, i) =>
-            parseFloat(document.getElementById(`j${i}`).value)
-          );
-          apiPost("/api/send_joints", { angles });
-        };
-
-        const sendHomeCommand = () => apiPost("/api/home");
-        const sendGripperCommand = () => {
-          const angle = parseFloat(
-            document.getElementById("gripper-angle-input").value
-          );
-          const current = parseFloat(
-            document.getElementById("gripper-current-input").value
-          );
-          apiPost("/api/send_gripper", { angle, current });
-        };
-        const setSpeed = () => {
-          const speed = parseFloat(document.getElementById("speed-slider").value);
-          apiPost("/api/set_speed", { speed });
-        };
-        const setFanSpeed = () => {
-          const speed = parseFloat(
-            document.getElementById("fan-speed-slider").value
-          );
-          apiPost("/api/set_fan_speed", { speed });
-        };
-        const sendMinLimits = () => {
-          const limits = JOINT_NAMES.map((_, i) =>
-            parseFloat(document.getElementById(`min-j${i}`).value)
-          );
-          apiPost("/api/set_min_limits", { limits });
-        };
-        const sendMaxLimits = () => {
-          const limits = JOINT_NAMES.map((_, i) =>
-            parseFloat(document.getElementById(`max-j${i}`).value)
-          );
-          apiPost("/api/set_max_limits", { limits });
-        };
-        const sendThreshold = () => {
-          const threshold = parseFloat(
-            document.getElementById("threshold-input").value
-          );
-          apiPost("/api/set_threshold", { threshold });
-        };
-        const sendDevThreshold = () => {
-          const threshold = parseFloat(
-            document.getElementById("dev-threshold-input").value
-          );
-          apiPost("/api/set_dev_threshold", { threshold });
-        };
-        const saveMcuConfig = () => apiPost("/api/save_mcu_config");
-        const releaseEstop = () => apiPost("/api/release_estop");
-        const killMotors = () => apiPost("/api/kill_motors");
-        const reconnectMcu = () => apiPost("/api/reconnect");
-
-        const addSequencePoint = () => {
-          const delay = parseInt(document.getElementById("sequence-delay").value);
-          apiPost("/api/add_sequence_point", { delay_ms: delay });
-        };
-        const clearSequence = () => {
-          if (confirm("Clear the entire sequence?"))
-            apiPost("/api/clear_sequence");
-        };
-        const deleteSequencePoint = (index) =>
-          apiPost("/api/delete_sequence_point", { index });
-        const saveSequence = () => {
-          const filename =
-            document.getElementById("sequence-filename").value || null;
-          apiPost("/api/save_sequence", { filename });
-        };
-        const loadSequence = () => {
-          const filename =
-            document.getElementById("sequence-filename").value || null;
-          apiPost("/api/load_sequence", { filename });
-        };
-        const playSequence = () => apiPost("/api/play_sequence");
-        const stopSequence = () => apiPost("/api/stop_sequence");
-        const savePosition = () => {
-          const name = document.getElementById("position-name").value;
-          if (name && name.trim()) {
-            apiPost("/api/save_position", { name: name.trim() });
-          } else {
-            logMessage("warn", "Please enter a name for the position.");
-          }
-        };
-        const goToPosition = () => {
-          const name = document.getElementById("saved-positions-select").value;
-          if (name) {
-            apiPost("/api/go_to_position", { name });
-          } else {
-            logMessage("warn", "Please select a position to go to.");
-          }
-        };
-        const deletePosition = () => {
-          const name = document.getElementById("saved-positions-select").value;
-          if (name) {
-            if (confirm(`Delete position '${name}'?`)) {
-              apiPost("/api/delete_position", { name });
-            }
-          } else {
-            logMessage("warn", "Please select a position to delete.");
-          }
-        };
-        const setSimulationMode = () => {
-          const enable = document.getElementById("sim-mode-toggle").checked;
-          apiPost("/api/set_simulation_mode", { enable });
+      const logBox = document.getElementById("log-box");
+      if (!logBox) return;
+      const timestamp = new Date().toLocaleTimeString();
+      const p = document.createElement("p");
+      p.className = `log-${level}`;
+      p.textContent = `[${timestamp}] ${message}`;
+      logBox.appendChild(p);
+      logBox.scrollTop = logBox.scrollHeight;
+    };
+    const apiPost = async (endpoint, body = {}) => {
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!response.ok) {
           logMessage(
-            enable ? "warn" : "info",
-            `Simulation mode ${enable ? "ENABLED" : "DISABLED"}.`
+            "error",
+            `API Request Failed: ${endpoint} - ${response.status} ${response.statusText}`
           );
-        };
-
-        // --- NEW: Set Collision Safety JS ---
-        const setCollisionSafety = () => {
-          const enable = document.getElementById("safety-toggle").checked;
-          apiPost("/api/set_collision_safety", { enable });
-        };
-
-        // --- updateStatusUI ---
-        function updateStatusUI(data) {
-          if (!isGuiInitialized) {
-            console.warn("GUI not ready for update");
-            return;
-          }
-          data = data || {
-            is_connected: false,
-            emergency_stop_active: false,
-            is_playing: false,
-            joint_angles: null,
-            sequence: [],
-            saved_positions: [],
-            simulation_mode: false,
-            collision_detection_enabled: false, // Default off
-          };
-          const isSimMode = data.simulation_mode === true;
-          const simToggle = document.getElementById("sim-mode-toggle");
-          if (simToggle && simToggle.checked !== isSimMode) {
-            simToggle.checked = isSimMode;
-          }
-
-          // Update Safety Toggle State
-          const safetyToggle = document.getElementById("safety-toggle");
-          if (safetyToggle) {
-            // Only update visual state if it mismatches backend to prevent flickering while dragging (though it's a click toggle)
-            if (
-              safetyToggle.checked !==
-              (data.collision_detection_enabled === true)
-            ) {
-              safetyToggle.checked = data.collision_detection_enabled === true;
-            }
-          }
-
-          const connStatus = document.getElementById("connection-status");
-          const reconnectBtn = document.getElementById("reconnect-btn");
-          const isConnected = data.is_connected === true;
-          if (connStatus) {
-            if (isSimMode) {
-              connStatus.textContent = "SIMULATION ACTIVE";
-              connStatus.className = "status-box status-ok";
-            } else {
-              connStatus.textContent = isConnected
-                ? "MCU CONNECTED"
-                : "MCU DISCONNECTED";
-              connStatus.className =
-                "status-box " + (isConnected ? "status-ok" : "status-warn");
-            }
-          }
-          if (reconnectBtn)
-            reconnectBtn.style.display =
-              isConnected || isSimMode ? "none" : "block";
-          const estopStatus = document.getElementById("estop-status");
-          const isEstopActive = data.emergency_stop_active === true;
-          if (estopStatus) {
-            estopStatus.textContent = isEstopActive ? "ACTIVE" : "INACTIVE";
-            estopStatus.className =
-              "status-box " + (isEstopActive ? "status-warn" : "status-ok");
-          }
-
-          isPlayingSequence = data.is_playing === true;
-          const playBtn = document.getElementById("play-sequence-btn");
-          const stopBtn = document.getElementById("stop-sequence-btn");
-          const goToPosBtn = document.getElementById("go-to-pos-btn");
-          const deletePosBtn = document.getElementById("delete-pos-btn");
-
-          const isControlDisabled =
-            isPlayingSequence || isEstopActive || (!isConnected && !isSimMode);
-          const isPowerControlDisabled = !isConnected && !isSimMode;
-          const killBtn = document.getElementById("kill-motors-btn");
-          const enableBtn = document.getElementById("release-estop-btn");
-
-          if (killBtn) killBtn.disabled = isPowerControlDisabled;
-          if (enableBtn) enableBtn.disabled = isPowerControlDisabled;
-          if (safetyToggle) safetyToggle.disabled = isPowerControlDisabled; // Disable toggle if not connected
-
-          if (playBtn) playBtn.disabled = isControlDisabled;
-          if (stopBtn) stopBtn.disabled = !isPlayingSequence;
-          if (goToPosBtn) goToPosBtn.disabled = isControlDisabled;
-          if (deletePosBtn)
-            deletePosBtn.disabled =
-              isControlDisabled ||
-              !document.getElementById("saved-positions-select").value;
-          JOINT_NAMES.forEach((_, i) => {
-            const sliderEl = document.getElementById(`j${i}`);
-            if (sliderEl) sliderEl.disabled = isControlDisabled;
-          });
-          if (simToggle) simToggle.disabled = isPlayingSequence;
-          const mainCurrentEl = document.getElementById("main-current");
-          const gripperCurrentEl = document.getElementById("gripper-current");
-          if (isConnected || isSimMode) {
-            if (mainCurrentEl)
-              mainCurrentEl.textContent = `${(data.main_current ?? 0).toFixed(
-                2
-              )} A`;
-            if (gripperCurrentEl)
-              gripperCurrentEl.textContent = `${(
-                data.gripper_current ?? 0
-              ).toFixed(2)} mA`;
-            if (data.joint_angles && data.joint_angles.length === 6) {
-              const anglesRad = data.joint_angles.map(
-                (deg) => (deg * Math.PI) / 180.0
-              );
-              window.updateRobotModel(anglesRad);
-              data.joint_angles.forEach((angle, i) => {
-                const sliderId = `j${i}`;
-                const statusEl = document.getElementById(`s${i}`);
-                const sliderEl = document.getElementById(sliderId);
-                const valueEl = document.getElementById(`${sliderId}-value`);
-                if (statusEl) statusEl.textContent = angle.toFixed(1);
-                if (sliderEl && activeSlider !== sliderId && !isPlayingSequence) {
-                  if (Math.abs(sliderEl.value - angle) > 0.5) {
-                    sliderEl.value = angle;
-                  }
-                  if (valueEl) valueEl.textContent = Math.round(angle);
-                } else if (sliderEl && valueEl && activeSlider === sliderId) {
-                  valueEl.textContent = sliderEl.value;
-                }
-              });
-            } else if (data.joint_angles === null) {
-              JOINT_NAMES.forEach((_, i) => {
-                const statusEl = document.getElementById(`s${i}`);
-                if (statusEl) statusEl.textContent = "---";
-              });
-            }
-            const thresholdEl = document.getElementById("threshold-input");
-            if (
-              thresholdEl &&
-              data.collision_threshold !== undefined &&
-              activeInput !== "threshold-input"
-            ) {
-              thresholdEl.value = data.collision_threshold.toFixed(2);
-            }
-            const devThresholdEl = document.getElementById("dev-threshold-input");
-            if (
-              devThresholdEl &&
-              data.collision_deviation_threshold !== undefined &&
-              activeInput !== "dev-threshold-input"
-            ) {
-              devThresholdEl.value =
-                data.collision_deviation_threshold.toFixed(2);
-            }
-            const fanSliderEl = document.getElementById("fan-speed-slider");
-            const fanValueEl = document.getElementById("fan-speed-value");
-            if (
-              fanSliderEl &&
-              data.fan_speed !== undefined &&
-              activeSlider !== "fan-speed-slider"
-            ) {
-              fanSliderEl.value = data.fan_speed;
-              if (fanValueEl) fanValueEl.textContent = data.fan_speed;
-            }
-            const speedSliderEl = document.getElementById("speed-slider");
-            const speedValueEl = document.getElementById("speed-value");
-            if (
-              speedSliderEl &&
-              data.current_speed_factor !== undefined &&
-              activeSlider !== "speed-slider"
-            ) {
-              speedSliderEl.value = data.current_speed_factor;
-              if (speedValueEl)
-                speedValueEl.textContent = Math.round(data.current_speed_factor);
-            }
-            if (data.servos_min) {
-              data.servos_min.forEach((min_val, i) => {
-                const minInputEl = document.getElementById(`min-j${i}`);
-                const sliderEl = document.getElementById(`j${i}`);
-                if (minInputEl && activeInput !== `min-j${i}`) {
-                  minInputEl.value = min_val.toFixed(1);
-                }
-                if (sliderEl) sliderEl.min = min_val;
-              });
-            }
-            if (data.servos_max) {
-              data.servos_max.forEach((max_val, i) => {
-                const maxInputEl = document.getElementById(`max-j${i}`);
-                const sliderEl = document.getElementById(`j${i}`);
-                if (maxInputEl && activeInput !== `max-j${i}`) {
-                  maxInputEl.value = max_val.toFixed(1);
-                }
-                if (sliderEl) sliderEl.max = max_val;
-              });
-            }
-          } else {
-            if (mainCurrentEl) mainCurrentEl.textContent = `--- A`;
-            if (gripperCurrentEl) gripperCurrentEl.textContent = `--- mA`;
-            JOINT_NAMES.forEach((_, i) => {
-              const statusEl = document.getElementById(`s${i}`);
-              if (statusEl) statusEl.textContent = "---";
-            });
-          }
-          const sequenceList = document.getElementById("sequence-list");
-          if (sequenceList) {
-            sequenceList.innerHTML = "";
-            if (
-              data.sequence &&
-              Array.isArray(data.sequence) &&
-              data.sequence.length > 0
-            ) {
-              data.sequence.forEach((point, index) => {
-                const anglesStr = point.angles.map((a) => a.toFixed(1)).join(",");
-                const item = document.createElement("div");
-                item.className = "sequence-item";
-                item.innerHTML = `
-                        <span>${index + 1
-                  }: [${anglesStr}] Spd:${point.speed.toFixed(0)} Del:${point.delay_ms
-                  }ms</span>
-                        <button onclick="deleteSequencePoint(${index})" class="btn-danger" ${isControlDisabled ? "disabled" : ""
-                  }>X</button> `;
-                sequenceList.appendChild(item);
-              });
-            } else {
-              sequenceList.innerHTML = "<span>Sequence is empty.</span>";
-            }
-          }
-          const positionsSelect = document.getElementById(
-            "saved-positions-select"
+          console.error(
+            "API Error Response:",
+            await response.text().catch(() => "Could not read error body")
           );
-          if (positionsSelect && deletePosBtn) {
-            const currentSelection = positionsSelect.value;
-            positionsSelect.innerHTML =
-              '<option value="">-- Select Position --</option>';
-            let selectionFound = false;
-            if (data.saved_positions && Array.isArray(data.saved_positions)) {
-              data.saved_positions.sort().forEach((name) => {
-                const option = document.createElement("option");
-                option.value = name;
-                option.textContent = name;
-                if (name === currentSelection) {
-                  option.selected = true;
-                  selectionFound = true;
-                }
-                positionsSelect.appendChild(option);
-              });
-            }
-            deletePosBtn.disabled = isControlDisabled || !selectionFound;
-          }
         }
+      } catch (error) {
+        console.error("API Post Error:", error);
+        logMessage(
+          "error",
+          `API Request Failed: ${endpoint} - ${error.message}`
+        );
+      }
+    };
+
+    const sendJointCommandDebounced = () => {
+      if (isPlayingSequence) return;
+      clearTimeout(jointSliderTimeout);
+      jointSliderTimeout = setTimeout(sendAllJoints, 50);
+    };
+    const setSpeedDebounced = () => {
+      clearTimeout(speedSliderTimeout);
+      speedSliderTimeout = setTimeout(setSpeed, 100);
+    };
+    const setFanSpeedDebounced = () => {
+      clearTimeout(fanSliderTimeout);
+      fanSliderTimeout = setTimeout(setFanSpeed, 100);
+    };
+
+    const sendAllJoints = () => {
+      if (isPlayingSequence) return;
+      const angles = JOINT_NAMES.map((_, i) =>
+        parseFloat(document.getElementById(`j${i}`).value)
+      );
+      apiPost("/api/send_joints", { angles });
+    };
+
+    const sendHomeCommand = () => apiPost("/api/home");
+    const sendGripperCommand = () => {
+      const angle = parseFloat(
+        document.getElementById("gripper-angle-input").value
+      );
+      const current = parseFloat(
+        document.getElementById("gripper-current-input").value
+      );
+      apiPost("/api/send_gripper", { angle, current });
+    };
+    const setSpeed = () => {
+      const speed = parseFloat(document.getElementById("speed-slider").value);
+      apiPost("/api/set_speed", { speed });
+    };
+    const setFanSpeed = () => {
+      const speed = parseFloat(
+        document.getElementById("fan-speed-slider").value
+      );
+      apiPost("/api/set_fan_speed", { speed });
+    };
+    const sendMinLimits = () => {
+      const limits = JOINT_NAMES.map((_, i) =>
+        parseFloat(document.getElementById(`min-j${i}`).value)
+      );
+      apiPost("/api/set_min_limits", { limits });
+    };
+    const sendMaxLimits = () => {
+      const limits = JOINT_NAMES.map((_, i) =>
+        parseFloat(document.getElementById(`max-j${i}`).value)
+      );
+      apiPost("/api/set_max_limits", { limits });
+    };
+    const sendThreshold = () => {
+      const threshold = parseFloat(
+        document.getElementById("threshold-input").value
+      );
+      apiPost("/api/set_threshold", { threshold });
+    };
+    const sendDevThreshold = () => {
+      const threshold = parseFloat(
+        document.getElementById("dev-threshold-input").value
+      );
+      apiPost("/api/set_dev_threshold", { threshold });
+    };
+    const saveMcuConfig = () => apiPost("/api/save_mcu_config");
+    const releaseEstop = () => apiPost("/api/release_estop");
+    const killMotors = () => apiPost("/api/kill_motors");
+    const reconnectMcu = () => apiPost("/api/reconnect");
+
+    const addSequencePoint = () => {
+      const delay = parseInt(document.getElementById("sequence-delay").value);
+      apiPost("/api/add_sequence_point", { delay_ms: delay });
+    };
+    const clearSequence = () => {
+      if (confirm("Clear the entire sequence?"))
+        apiPost("/api/clear_sequence");
+    };
+    const deleteSequencePoint = (index) =>
+      apiPost("/api/delete_sequence_point", { index });
+    const saveSequence = () => {
+      const filename =
+        document.getElementById("sequence-filename").value || null;
+      apiPost("/api/save_sequence", { filename });
+    };
+    const loadSequence = () => {
+      const filename =
+        document.getElementById("sequence-filename").value || null;
+      apiPost("/api/load_sequence", { filename });
+    };
+    const playSequence = () => apiPost("/api/play_sequence");
+    const stopSequence = () => apiPost("/api/stop_sequence");
+    const savePosition = () => {
+      const name = document.getElementById("position-name").value;
+      if (name && name.trim()) {
+        apiPost("/api/save_position", { name: name.trim() });
+      } else {
+        logMessage("warn", "Please enter a name for the position.");
+      }
+    };
+    const goToPosition = () => {
+      const name = document.getElementById("saved-positions-select").value;
+      if (name) {
+        apiPost("/api/go_to_position", { name });
+      } else {
+        logMessage("warn", "Please select a position to go to.");
+      }
+    };
+    const deletePosition = () => {
+      const name = document.getElementById("saved-positions-select").value;
+      if (name) {
+        if (confirm(`Delete position '${name}'?`)) {
+          apiPost("/api/delete_position", { name });
+        }
+      } else {
+        logMessage("warn", "Please select a position to delete.");
+      }
+    };
+    const setSimulationMode = () => {
+      const enable = document.getElementById("sim-mode-toggle").checked;
+      apiPost("/api/set_simulation_mode", { enable });
+      logMessage(
+        enable ? "warn" : "info",
+        `Simulation mode ${enable ? "ENABLED" : "DISABLED"}.`
+      );
+    };
+
+    // --- NEW: Set Collision Safety JS ---
+    const setCollisionSafety = () => {
+      const enable = document.getElementById("safety-toggle").checked;
+      apiPost("/api/set_collision_safety", { enable });
+    };
+
+    // --- updateStatusUI ---
+    function updateStatusUI(data) {
+      if (!isGuiInitialized) {
+        console.warn("GUI not ready for update");
+        return;
+      }
+      data = data || {
+        is_connected: false,
+        emergency_stop_active: false,
+        is_playing: false,
+        joint_angles: null,
+        sequence: [],
+        saved_positions: [],
+        simulation_mode: false,
+        collision_detection_enabled: false, // Default off
+      };
+      const isSimMode = data.simulation_mode === true;
+      const simToggle = document.getElementById("sim-mode-toggle");
+      if (simToggle && simToggle.checked !== isSimMode) {
+        simToggle.checked = isSimMode;
+      }
+
+      // Update Safety Toggle State
+      const safetyToggle = document.getElementById("safety-toggle");
+      if (safetyToggle) {
+        // Only update visual state if it mismatches backend to prevent flickering while dragging (though it's a click toggle)
+        if (
+          safetyToggle.checked !==
+          (data.collision_detection_enabled === true)
+        ) {
+          safetyToggle.checked = data.collision_detection_enabled === true;
+        }
+      }
+
+      const connStatus = document.getElementById("connection-status");
+      const reconnectBtn = document.getElementById("reconnect-btn");
+      const isConnected = data.is_connected === true;
+      if (connStatus) {
+        if (isSimMode) {
+          connStatus.textContent = "SIMULATION ACTIVE";
+          connStatus.className = "status-box status-ok";
+        } else {
+          connStatus.textContent = isConnected
+            ? "MCU CONNECTED"
+            : "MCU DISCONNECTED";
+          connStatus.className =
+            "status-box " + (isConnected ? "status-ok" : "status-warn");
+        }
+      }
+      if (reconnectBtn)
+        reconnectBtn.style.display =
+          isConnected || isSimMode ? "none" : "block";
+      const estopStatus = document.getElementById("estop-status");
+      const isEstopActive = data.emergency_stop_active === true;
+      if (estopStatus) {
+        estopStatus.textContent = isEstopActive ? "ACTIVE" : "INACTIVE";
+        estopStatus.className =
+          "status-box " + (isEstopActive ? "status-warn" : "status-ok");
+      }
+
+      isPlayingSequence = data.is_playing === true;
+      const playBtn = document.getElementById("play-sequence-btn");
+      const stopBtn = document.getElementById("stop-sequence-btn");
+      const goToPosBtn = document.getElementById("go-to-pos-btn");
+      const deletePosBtn = document.getElementById("delete-pos-btn");
+
+      const isControlDisabled =
+        isPlayingSequence || isEstopActive || (!isConnected && !isSimMode);
+      const isPowerControlDisabled = !isConnected && !isSimMode;
+      const killBtn = document.getElementById("kill-motors-btn");
+      const enableBtn = document.getElementById("release-estop-btn");
+
+      if (killBtn) killBtn.disabled = isPowerControlDisabled;
+      if (enableBtn) enableBtn.disabled = isPowerControlDisabled;
+      if (safetyToggle) safetyToggle.disabled = isPowerControlDisabled; // Disable toggle if not connected
+
+      if (playBtn) playBtn.disabled = isControlDisabled;
+      if (stopBtn) stopBtn.disabled = !isPlayingSequence;
+      if (goToPosBtn) goToPosBtn.disabled = isControlDisabled;
+      if (deletePosBtn)
+        deletePosBtn.disabled =
+          isControlDisabled ||
+          !document.getElementById("saved-positions-select").value;
+      JOINT_NAMES.forEach((_, i) => {
+        const sliderEl = document.getElementById(`j${i}`);
+        if (sliderEl) sliderEl.disabled = isControlDisabled;
+      });
+      if (simToggle) simToggle.disabled = isPlayingSequence;
+      const mainCurrentEl = document.getElementById("main-current");
+      const gripperCurrentEl = document.getElementById("gripper-current");
+      if (isConnected || isSimMode) {
+        if (mainCurrentEl)
+          mainCurrentEl.textContent = `${(data.main_current ?? 0).toFixed(
+            2
+          )} A`;
+        if (gripperCurrentEl)
+          gripperCurrentEl.textContent = `${(
+            data.gripper_current ?? 0
+          ).toFixed(2)} mA`;
+        if (data.joint_angles && data.joint_angles.length === 6) {
+          const anglesRad = data.joint_angles.map(
+            (deg) => (deg * Math.PI) / 180.0
+          );
+          window.updateRobotModel(anglesRad);
+          data.joint_angles.forEach((angle, i) => {
+            const sliderId = `j${i}`;
+            const statusEl = document.getElementById(`s${i}`);
+            const sliderEl = document.getElementById(sliderId);
+            const valueEl = document.getElementById(`${sliderId}-value`);
+            if (statusEl) statusEl.textContent = angle.toFixed(1);
+            if (sliderEl && activeSlider !== sliderId && !isPlayingSequence) {
+              if (Math.abs(sliderEl.value - angle) > 0.5) {
+                sliderEl.value = angle;
+              }
+              if (valueEl) valueEl.textContent = Math.round(angle);
+            } else if (sliderEl && valueEl && activeSlider === sliderId) {
+              valueEl.textContent = sliderEl.value;
+            }
+          });
+        } else if (data.joint_angles === null) {
+          JOINT_NAMES.forEach((_, i) => {
+            const statusEl = document.getElementById(`s${i}`);
+            if (statusEl) statusEl.textContent = "---";
+          });
+        }
+        const thresholdEl = document.getElementById("threshold-input");
+        if (
+          thresholdEl &&
+          data.collision_threshold !== undefined &&
+          activeInput !== "threshold-input"
+        ) {
+          thresholdEl.value = data.collision_threshold.toFixed(2);
+        }
+        const devThresholdEl = document.getElementById("dev-threshold-input");
+        if (
+          devThresholdEl &&
+          data.collision_deviation_threshold !== undefined &&
+          activeInput !== "dev-threshold-input"
+        ) {
+          devThresholdEl.value =
+            data.collision_deviation_threshold.toFixed(2);
+        }
+        const fanSliderEl = document.getElementById("fan-speed-slider");
+        const fanValueEl = document.getElementById("fan-speed-value");
+        if (
+          fanSliderEl &&
+          data.fan_speed !== undefined &&
+          activeSlider !== "fan-speed-slider"
+        ) {
+          fanSliderEl.value = data.fan_speed;
+          if (fanValueEl) fanValueEl.textContent = data.fan_speed;
+        }
+        const speedSliderEl = document.getElementById("speed-slider");
+        const speedValueEl = document.getElementById("speed-value");
+        if (
+          speedSliderEl &&
+          data.current_speed_factor !== undefined &&
+          activeSlider !== "speed-slider"
+        ) {
+          speedSliderEl.value = data.current_speed_factor;
+          if (speedValueEl)
+            speedValueEl.textContent = Math.round(data.current_speed_factor);
+        }
+        if (data.servos_min) {
+          data.servos_min.forEach((min_val, i) => {
+            const minInputEl = document.getElementById(`min-j${i}`);
+            const sliderEl = document.getElementById(`j${i}`);
+            if (minInputEl && activeInput !== `min-j${i}`) {
+              minInputEl.value = min_val.toFixed(1);
+            }
+            if (sliderEl) sliderEl.min = min_val;
+          });
+        }
+        if (data.servos_max) {
+          data.servos_max.forEach((max_val, i) => {
+            const maxInputEl = document.getElementById(`max-j${i}`);
+            const sliderEl = document.getElementById(`j${i}`);
+            if (maxInputEl && activeInput !== `max-j${i}`) {
+              maxInputEl.value = max_val.toFixed(1);
+            }
+            if (sliderEl) sliderEl.max = max_val;
+          });
+        }
+      } else {
+        if (mainCurrentEl) mainCurrentEl.textContent = `--- A`;
+        if (gripperCurrentEl) gripperCurrentEl.textContent = `--- mA`;
+        JOINT_NAMES.forEach((_, i) => {
+          const statusEl = document.getElementById(`s${i}`);
+          if (statusEl) statusEl.textContent = "---";
+        });
+      }
+      const sequenceList = document.getElementById("sequence-list");
+      if (sequenceList) {
+        sequenceList.innerHTML = "";
+        if (
+          data.sequence &&
+          Array.isArray(data.sequence) &&
+          data.sequence.length > 0
+        ) {
+          data.sequence.forEach((point, index) => {
+            const anglesStr = point.angles.map((a) => a.toFixed(1)).join(",");
+            const item = document.createElement("div");
+            item.className = "sequence-item";
+            item.innerHTML = `
+                        <span>${index + 1
+              }: [${anglesStr}] Spd:${point.speed.toFixed(0)} Del:${point.delay_ms
+              }ms</span>
+                        <button onclick="deleteSequencePoint(${index})" class="btn-danger" ${isControlDisabled ? "disabled" : ""
+              }>X</button> `;
+            sequenceList.appendChild(item);
+          });
+        } else {
+          sequenceList.innerHTML = "<span>Sequence is empty.</span>";
+        }
+      }
+      const positionsSelect = document.getElementById(
+        "saved-positions-select"
+      );
+      if (positionsSelect && deletePosBtn) {
+        const currentSelection = positionsSelect.value;
+        positionsSelect.innerHTML =
+          '<option value="">-- Select Position --</option>';
+        let selectionFound = false;
+        if (data.saved_positions && Array.isArray(data.saved_positions)) {
+          data.saved_positions.sort().forEach((name) => {
+            const option = document.createElement("option");
+            option.value = name;
+            option.textContent = name;
+            if (name === currentSelection) {
+              option.selected = true;
+              selectionFound = true;
+            }
+            positionsSelect.appendChild(option);
+          });
+        }
+        deletePosBtn.disabled = isControlDisabled || !selectionFound;
+      }
+    }
   </script>
 </body>
 

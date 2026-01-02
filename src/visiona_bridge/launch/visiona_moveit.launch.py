@@ -76,7 +76,7 @@ def generate_launch_description():
         package='tf2_ros',
         executable='static_transform_publisher',
         name='camera_link_broadcaster',
-        arguments=['0', '0', '0', '0', '0', '0', 'world', 'ascamera_hp60c_camera_link_0'],
+        arguments=['0', '0', '0', '0', '0', '0', 'camera_link', 'ascamera_hp60c_camera_link_0'],
         output='screen'
     )
 
