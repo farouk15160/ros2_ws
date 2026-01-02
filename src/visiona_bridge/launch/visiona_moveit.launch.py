@@ -2,7 +2,8 @@ import os
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression
+from launch.conditions import LaunchConfigurationEquals
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 
@@ -17,6 +18,9 @@ def generate_launch_description():
 
     visiona_bridge_dir = get_package_share_directory('visiona_bridge')
     visiona_moveit_config_dir = get_package_share_directory('visiona_moveit_config')
+
+    # Define use_sim_time based on mode (True for Sim, False for Real/Mock)
+    use_sim_time = PythonExpression(["'true' if '", mode, "' == 'sim' else 'false'"])
 
     # --- 1. Launch Gazebo Simulation & Controllers ---
     # This launches: Gazebo, Spawns Robot, Spawns Controllers (joint_state_broadcaster, joint_trajectory_controller)
@@ -47,6 +51,7 @@ def generate_launch_description():
         launch_arguments={'use_sim_time': use_sim_time}.items()
     )
 
+
     # --- 4. Launch Camera (ASCamera) ---
     # User requested this to run always
     ascamera_launch = IncludeLaunchDescription(
@@ -64,6 +69,25 @@ def generate_launch_description():
         executable='moveit_homer.py',
         name='moveit_homer',
         output='screen'
+    )
+    
+    # TF from robot's camera_link to specific camera driver frame
+    camera_tf_node = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='camera_link_broadcaster',
+        arguments=['0', '0', '0', '0', '0', '0', 'world', 'ascamera_hp60c_camera_link_0'],
+        output='screen'
+    )
+
+    # --- 7. Command Forwarder (Real Mode) ---
+    # Forwards controller reference to bridge joint_targets
+    command_forwarder_node = Node(
+        package='visiona_bridge',
+        executable='command_forwarder.py',
+        name='command_forwarder',
+        output='screen',
+        condition=LaunchConfigurationEquals('mode', 'real')
     )
 
     return LaunchDescription([
@@ -84,9 +108,11 @@ def generate_launch_description():
         ),
 
         # Delay Homer until MoveIt is definitely ready
-        TimerAction(
-            period=15.0,
-            actions=[homer_node]
-        )
+        # TimerAction(
+        #     period=15.0,
+        #     actions=[homer_node]
+        # ),
+        camera_tf_node,
+        command_forwarder_node
     ])
 

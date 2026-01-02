@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="visiona">
     <xacro:arg name="controller_config_path" default="" />
+    <xacro:arg name="controller_config_path" default="" />
     <xacro:arg name="use_sim" default="true" />
+    <xacro:arg name="use_mock_hardware" default="false" />
     <xacro:include filename="./gripper.xacro" />
     <link name="world">
     </link>
@@ -164,7 +166,7 @@
         <parent link="base" />
         <child link="base_link" />
         <axis xyz="0.0 0 1" />
-        <limit lower="0.0" upper="3.14" effort="100.0" velocity="10.0" />
+        <limit lower="-3.14" upper="3.14" effort="100.0" velocity="10.0" />
 
         <dynamics damping="1.0" friction="1.0" />
 
@@ -175,7 +177,7 @@
         <parent link="base_link" />
         <child link="link_1_shoulder" />
         <axis xyz="1 0 0.0" />
-        <limit lower="0.0" upper="3.14" effort="100.0" velocity="10.0" />
+        <limit lower="-3.14" upper="3.14" effort="100.0" velocity="10.0" />
         <dynamics damping="1.0" friction="1.0" />
 
     </joint>

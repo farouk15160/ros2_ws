@@ -56,7 +56,8 @@ def generate_launch_description():
         PathJoinSubstitution([FindExecutable(name='xacro')]), ' ',
         xacro_file_path, ' ',
         'controller_config_path:=', controller_config_path, ' ',
-        'use_sim:=', PythonExpression(["'true' if '", mode, "' in ['sim', 'real'] else 'false'"]), ' ',
+        'use_sim:=', PythonExpression(["'true' if '", mode, "' == 'sim' else 'false'"]), ' ',
+        'use_mock_hardware:=', PythonExpression(["'true' if '", mode, "' == 'real' else 'false'"]), ' ',
         'use_gazebo_joint_pub:=', PythonExpression(["'true' if '", mode, "' == 'sim' else 'false'"])
     ])
     
@@ -72,7 +73,7 @@ def generate_launch_description():
         executable='robot_state_publisher',
         name='robot_state_publisher',
         output='screen',
-        parameters=[robot_description, {'use_sim_time': PythonExpression(["'", mode, "' in ['sim', 'real']"])}]
+        parameters=[robot_description, {'use_sim_time': PythonExpression(["'true' if '", mode, "' == 'sim' else 'false'"])}]
     )
 
     # 2. Gazebo (In SIM or REAL mode for Digital Twin)
@@ -80,7 +81,7 @@ def generate_launch_description():
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(gazebo_launch_file),
         launch_arguments={'extra_gazebo_args': '--verbose'}.items(),
-        condition=IfCondition(PythonExpression(["'", mode, "' in ['sim', 'real']"]))
+        condition=LaunchConfigurationEquals('mode', 'sim')
     )
 
     spawn_entity = Node(
@@ -89,7 +90,18 @@ def generate_launch_description():
         arguments=['-topic', 'robot_description', '-entity', 'Visiona', '-timeout', '90',
                    '-x', '0.0', '-y', '0.0', '-z', '0.05'],
         output='screen',
-        condition=IfCondition(PythonExpression(["'", mode, "' in ['sim', 'real']"]))
+
+        condition=LaunchConfigurationEquals('mode', 'sim')
+    )
+
+    # 2.5 Controller Manager (Only in REAL/MOCK mode)
+    # In Sim, Gazebo runs this. In Real, we need to run it manually with Mock Hardware.
+    node_controller_manager = Node(
+        package="controller_manager",
+        executable="ros2_control_node",
+        parameters=[robot_description, controller_config_path],
+        output="screen",
+        condition=LaunchConfigurationEquals('mode', 'real')
     )
 
     # 3. Controllers
@@ -137,7 +149,7 @@ def generate_launch_description():
         'publish_joint_states': PythonExpression(["'true' if '", mode, "' != 'sim' else 'false'"]),
         'sync_gazebo': PythonExpression(["'true' if '", mode, "' == 'real' else 'false'"]),
         'serial_port': '/dev/ttyUSB0', # Default
-        'use_sim_time': PythonExpression(["'true' if '", mode, "' in ['sim', 'real'] else 'false'"])
+        'use_sim_time': PythonExpression(["'true' if '", mode, "' == 'sim' else 'false'"])
     }]
 
     web_node = Node(
@@ -156,8 +168,9 @@ def generate_launch_description():
         model_arg,
         set_mode, # Apply alias logic first
         node_robot_state_publisher,
-        # gazebo, dont remove 
+        gazebo,
         spawn_entity,
+        node_controller_manager,
         
         # HANDLER FOR SIM: Entity -> Broadcaster -> Controller -> Home
         RegisterEventHandler(

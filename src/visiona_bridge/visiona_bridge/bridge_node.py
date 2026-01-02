@@ -15,6 +15,14 @@ import math
 import json
 import os
 import signal
+# --- Imports for Cartesian Interface ---
+from rclpy.action import ActionClient
+from geometry_msgs.msg import PoseStamped
+from moveit_msgs.action import MoveGroup
+from moveit_msgs.msg import Constraints, PositionConstraint, OrientationConstraint
+from shape_msgs.msg import SolidPrimitive
+from tf2_ros import Buffer, TransformListener
+
 
 
 # Import constants from our new file
@@ -97,6 +105,21 @@ class RobotArmBridge(Node):
         self.kill_motors_service = self.create_service(Trigger, 'kill_motors', self.kill_motors_callback)
         self.homing_service = self.create_service(Trigger, 'home_robot', self.home_robot_callback)
         self.release_estop_service = self.create_service(Trigger, 'release_emergency_stop', self.release_estop_callback)
+        
+        # --- Cartesian Interface Setup ---
+        self.planning_frame = 'world'
+        self.ee_link = 'gripper_base'
+        self.move_group_name = 'visiona_arm'
+        
+        self.cartesian_pose_pub = self.create_publisher(PoseStamped, '/visiona/current_pose', 10)
+        self.cartesian_target_sub = self.create_subscription(PoseStamped, '/visiona/target_pose', self.cartesian_target_callback, 10)
+        self.cartesian_timer = self.create_timer(0.5, self.publish_cartesian_pose)
+        
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+        
+        self._move_action_client = ActionClient(self, MoveGroup, 'move_action')
+        self.get_logger().info("Cartesian Interface Initialized.")
         
         # --- NEW SERVICE: Toggle Collision Safety ---
         # request.data = True (ON), False (OFF)
@@ -1119,7 +1142,14 @@ class RobotArmBridge(Node):
         checksum = 0
         for byte in data: checksum ^= byte
         return checksum
-    def deg_to_rad(self, deg): return deg * math.pi / 180.0
+    def deg_to_rad(self, deg): 
+        rad = deg * math.pi / 180.0
+        # Normalize to [-pi, pi]
+        while rad > math.pi:
+            rad -= 2 * math.pi
+        while rad < -math.pi:
+            rad += 2 * math.pi
+        return rad
     def rad_to_deg(self, rad): return rad * 180.0 / math.pi
 
     def cleanup(self):
@@ -1139,3 +1169,125 @@ class RobotArmBridge(Node):
             except Exception as e: self.get_logger().error(f"Error closing serial port during cleanup: {e}")
             self.ser = None
         self.reconnect_event.set()
+
+    # --- Cartesian Interface Methods ---
+    def publish_cartesian_pose(self):
+        try:
+            # Lookup transform from world to EE
+            t = self.tf_buffer.lookup_transform(
+                self.planning_frame,
+                self.ee_link,
+                rclpy.time.Time())
+                
+            msg = PoseStamped()
+            msg.header.stamp = self.get_clock().now().to_msg()
+            msg.header.frame_id = self.planning_frame
+            msg.pose.position.x = t.transform.translation.x
+            msg.pose.position.y = t.transform.translation.y
+            msg.pose.position.z = t.transform.translation.z
+            msg.pose.orientation = t.transform.rotation
+            
+            self.cartesian_pose_pub.publish(msg)
+
+            # --- Emit to Web GUI via SocketIO ---
+            if hasattr(self, 'socketio') and self.socketio:
+                pose_data = {
+                    'x': round(msg.pose.position.x, 3),
+                    'y': round(msg.pose.position.y, 3),
+                    'z': round(msg.pose.position.z, 3)
+                }
+                self.socketio.emit('cartesian_pose', pose_data)
+
+        except Exception:
+            pass # TF might not be ready
+
+    def jog_cartesian(self, dx, dy, dz):
+        """Relative Cartesian Move"""
+        try:
+            # 1. Get Current Pose
+            t = self.tf_buffer.lookup_transform(
+                self.planning_frame,
+                self.ee_link,
+                rclpy.time.Time())
+            
+            # 2. Calculate Target
+            target_pose = PoseStamped()
+            target_pose.header.frame_id = self.planning_frame
+            target_pose.header.stamp = self.get_clock().now().to_msg()
+            target_pose.pose.position.x = t.transform.translation.x + dx
+            target_pose.pose.position.y = t.transform.translation.y + dy
+            target_pose.pose.position.z = t.transform.translation.z + dz
+            # Keep orientation same as current
+            target_pose.pose.orientation = t.transform.rotation
+
+            self.get_logger().info(f"Jogging to: {target_pose.pose.position.x:.2f}, {target_pose.pose.position.y:.2f}, {target_pose.pose.position.z:.2f}")
+
+            # 3. Call standard target callback
+            self.cartesian_target_callback(target_pose)
+            
+        except Exception as e:
+            self.get_logger().error(f"Jog failed: {e}")
+
+    def cartesian_target_callback(self, msg: PoseStamped):
+        self.get_logger().info(f'Received Cartesian Target: {msg.pose.position.x:.2f}, {msg.pose.position.y:.2f}, {msg.pose.position.z:.2f}')
+        
+        if not self._move_action_client.wait_for_server(timeout_sec=2.0):
+            self.get_logger().error('MoveGroup action server not available.')
+            return
+
+        goal_msg = MoveGroup.Goal()
+        goal_msg.request.group_name = self.move_group_name
+        goal_msg.request.num_planning_attempts = 10
+        goal_msg.request.allowed_planning_time = 5.0
+        goal_msg.request.max_velocity_scaling_factor = 0.5
+        goal_msg.request.max_acceleration_scaling_factor = 0.5
+        
+        # Create Constraints
+        constraints = Constraints()
+        constraints.name = "cartesian_goal"
+        
+        # Position Constraint
+        pc = PositionConstraint()
+        pc.header.frame_id = self.planning_frame
+        pc.link_name = self.ee_link
+        pc.target_point_offset.x = 0.0
+        pc.target_point_offset.y = 0.0
+        pc.target_point_offset.z = 0.0
+        pc.constraint_region.primitives.append(SolidPrimitive(type=SolidPrimitive.SPHERE, dimensions=[0.01])) # 1cm tolerance
+        
+        # The region pose is the target pose
+        region_pose = msg.pose
+        pc.constraint_region.primitive_poses.append(region_pose)
+        pc.weight = 1.0
+        constraints.position_constraints.append(pc)
+        
+        # Orientation Constraint
+        oc = OrientationConstraint()
+        oc.header.frame_id = self.planning_frame
+        oc.link_name = self.ee_link
+        oc.orientation = msg.pose.orientation
+        oc.absolute_x_axis_tolerance = 0.1
+        oc.absolute_y_axis_tolerance = 0.1
+        oc.absolute_z_axis_tolerance = 0.1
+        oc.weight = 1.0
+        constraints.orientation_constraints.append(oc)
+        
+        goal_msg.request.goal_constraints.append(constraints)
+        
+        self.get_logger().info('Sending MoveGroup Goal...')
+        self._send_goal_future = self._move_action_client.send_goal_async(goal_msg)
+        self._send_goal_future.add_done_callback(self.cartesian_goal_response_callback)
+
+    def cartesian_goal_response_callback(self, future):
+        goal_handle = future.result()
+        if not goal_handle.accepted:
+            self.get_logger().info('Cartesian Goal rejected')
+            return
+
+        self.get_logger().info('Cartesian Goal accepted. Executing...')
+        self._get_result_future = goal_handle.get_result_async()
+        self._get_result_future.add_done_callback(self.cartesian_result_callback)
+
+    def cartesian_result_callback(self, future):
+        result = future.result().result
+        self.get_logger().info(f'Cartesian Result Error Code: {result.error_code.val}')
