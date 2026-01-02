@@ -22,35 +22,13 @@
         </visual>
 
         <collision name="base_clyinder">
-            <origin xyz="0 0 0.05 " rpy="0 0 0 " />
+          <origin xyz="0 0 0 " rpy="0 0 0 " />
             <geometry>
-                <cylinder length="0.1" radius="0.09" />
+                <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/base.stl"
+                    scale="0.001 0.001 0.001" />
             </geometry>
         </collision>
-        <collision name="logic_box">
-            <origin xyz="0.18 0 0.05 " rpy="0 0 0 " />
-            <geometry>
-                <box size="0.22 0.21 0.1" />
-            </geometry>
-        </collision>
-        <collision name="foot_1">
-            <origin xyz="-0.12 0 0.012 " rpy="0 0 0 " />
-            <geometry>
-                <box size="0.09 0.08 0.026" />
-            </geometry>
-        </collision>
-        <collision name="foot_2">
-            <origin xyz="0 -0.12  0.012 " rpy="0 0 0 " />
-            <geometry>
-                <box size="0.09 0.08 0.026" />
-            </geometry>
-        </collision>
-        <collision name="foot_3">
-            <origin xyz="0 0.12  0.012 " rpy="0 0 0 " />
-            <geometry>
-                <box size="0.09 0.09 0.026" />
-            </geometry>
-        </collision>
+     
     </link>
     <link name="base_link">
         <inertial>
@@ -67,9 +45,10 @@
         </visual>
 
         <collision>
-            <origin xyz="-0.005 0 0.14 " rpy="0 0 0 " />
+            <origin xyz="0 0 0.075 " rpy="0 0 0 " />
             <geometry>
-                <cylinder length="0.076" radius="0.057" />
+                <mesh filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/base_link.stl"
+                    scale="0.001 0.001 0.001" />
             </geometry>
         </collision>
     </link>
@@ -90,9 +69,11 @@
         </visual>
 
         <collision>
-            <origin xyz="-0.002 0 0.1" rpy="0 0 0 " />
+            <origin xyz="0 0 0 " rpy="0 0 0 " />
             <geometry>
-                <box size="0.07 0.07 0.23" />
+                <mesh
+                    filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/link_1_shoulder.stl"
+                    scale="0.001 0.001 0.001" />
             </geometry>
         </collision>
     </link>
@@ -112,9 +93,11 @@
         </visual>
 
         <collision>
-            <origin xyz="0.0 -0.085 0.0" rpy="1.57 0 0 " />
+            <origin xyz="0 0 0 " rpy="1.57 0 0 " />
             <geometry>
-                <box size="0.027 0.06 0.12" />
+                <mesh
+                    filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/link_2_elbow.stl"
+                    scale="0.001 0.001 0.001" />
             </geometry>
         </collision>
     </link>
@@ -133,23 +116,14 @@
             </geometry>
         </visual>
         <collision>
-            <origin xyz="0 -0.03 0" rpy="0 0 0 " />
+            <origin xyz="0 0.005 0" rpy="1.57 0 0 " />
             <geometry>
-                <box size="0.068 0.12 0.06" />
+                <mesh
+                    filename="file:///home/farouk/ros2_ws/src/visiona_bridge/meshes/link_3_wrist.stl"
+                    scale="0.001 0.001 0.001" />
             </geometry>
         </collision>
-        <collision>
-            <origin xyz="0 -0.075 -0.04" rpy="0 0 0 " />
-            <geometry>
-                <box size="0.04 0.02 0.03" />
-            </geometry>
-        </collision>
-        <collision>
-            <origin xyz="0 -0.06 0.055" rpy="0 0 0 " />
-            <geometry>
-                <box size="0.08 0.04 0.05" />
-            </geometry>
-        </collision>
+        
 
     </link>
 

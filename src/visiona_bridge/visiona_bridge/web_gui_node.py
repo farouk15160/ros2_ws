@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""
+Main execution entry point for Visiona Bridge with Web GUI.
+
+Launches the ROS2 node and Flask web server.
+"""
+
 import rclpy
 import threading
 import signal
@@ -6,107 +12,86 @@ import os
 import time
 from ament_index_python.packages import get_package_share_directory
 
-# Import our local package modules
+# Import from new structure
 from .bridge_node import RobotArmBridge
-from .web_app import create_app, socketio # Import the app factory and socketio instance
+from .gui import create_app, socketio
 
-# ==============================================================================
-# 5. MAIN EXECUTION BLOCK (VERSION 4.0.1)
-# ==============================================================================
+
 def main(args=None):
-    # Filter out ROS args to find our custom args
-    # valid_args = [arg for arg in sys.argv if not arg.startswith('__')]
-    
+    """Main entry point."""
     import sys
-    use_gui = True
-    if '--no-gui' in sys.argv:
-        use_gui = False
-        # Remove it so rclpy doesn't complain if we passed it to init? 
-        # Actually rclpy.init(args=args) handles standard ros args. 
-        # Let's just manually check sys.argv before passing to rclpy
+    use_gui = '--no-gui' not in sys.argv
     
     rclpy.init(args=args)
     
-    # --- Initialize ROS Node ---
+    # Initialize ROS Node
     ros_node = RobotArmBridge()
     
-    # --- Start ROS Spin Thread ---
+    # Start ROS spin thread
     ros_thread = threading.Thread(target=rclpy.spin, args=(ros_node,), daemon=True)
     ros_thread.start()
-
+    
+    # Create Flask app if GUI enabled
     app = None
     if use_gui:
-        # --- Create Flask App ---
-        # Pass the initialized ros_node instance to the app factory
-        # This will also attach the socketio instance to the ros_node
-        app, _ = create_app(ros_node) 
-
-    # --- Graceful Shutdown Handler ---
+        app, _ = create_app(ros_node)
+    
+    # Graceful shutdown handler
     def signal_handler(sig, frame):
         print("\nCtrl+C received, shutting down...")
         if ros_node:
-            ros_node.cleanup() # Save data, close serial
+            ros_node.cleanup()
         
-        # Try to stop socketio server gracefully
         if use_gui:
             try:
                 socketio.stop()
             except Exception:
-                pass # Ignore if already stopped
+                pass
         
-        # Request ROS node shutdown
-        rclpy.try_shutdown() 
-
-        # Wait briefly for threads
+        rclpy.try_shutdown()
+        
         if ros_thread.is_alive():
             ros_thread.join(timeout=1.0)
-        if ros_node and ros_node.connection_thread.is_alive():
-            ros_node.connection_thread.join(timeout=1.0)
         
         print("Shutdown complete.")
-        os._exit(0) # Force exit if threads hang
-
+        os._exit(0)
+    
     signal.signal(signal.SIGINT, signal_handler)
-
-    # --- Print Startup Message ---
+    
+    # Print startup message
     try:
         package_share_dir = get_package_share_directory('visiona_bridge')
         static_dir = os.path.join(package_share_dir, 'static')
     except Exception:
-        static_dir = "Unknown (package not found?)"
-
+        static_dir = "Unknown"
+    
     print("\n\033[92m============================================================\033[0m")
     if use_gui:
-        print("🤖 \033[1mRobot Arm Bridge V4.0.1 with Web GUI is running!\033[0m")
-        print(f"       Serving static files from: \033[33m{static_dir}\033[0m")
-        print("       Open your browser to \033[4mhttp://0.0.0.0:5000\033[0m")
+        print("🤖 \033[1mRobot Arm Bridge V5.0 (Restructured) with Web GUI\033[0m")
+        print(f"       Static files: \033[33m{static_dir}\033[0m")
+        print("       Open browser: \033[4mhttp://0.0.0.0:5000\033[0m")
     else:
-         print("🤖 \033[1mRobot Arm Bridge V4.0.1 (HEADLESS MODE) is running!\033[0m")
-         print("       Web GUI is DISABLED.")
+        print("🤖 \033[1mRobot Arm Bridge V5.0 (HEADLESS MODE)\033[0m")
+        print("       Web GUI is DISABLED.")
     
-    print("       Press \033[1mCtrl+C\033[0m to shut down gracefully.")
+    print("       Press \033[1mCtrl+C\033[0m to shut down.")
     print("\033[92m============================================================\033[0m\n")
-
-    # --- Run Flask-SocketIO Server (blocks main thread) OR Wait Loop ---
+    
+    # Run Flask server or wait loop
     try:
         if use_gui:
-            # Use the socketio object that was configured by create_app
-            socketio.run(app, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True, use_reloader=False, log_output=False)
+            socketio.run(app, host='0.0.0.0', port=5000, 
+                        allow_unsafe_werkzeug=True, use_reloader=False, log_output=False)
         else:
-            # Just wait forever (the ros_thread is doing the work)
             while True:
                 time.sleep(1.0)
-                
     except Exception as e:
-        if use_gui:
-            print(f"\nError running Flask-SocketIO: {e}")
-        else:
-            print(f"\nError in main loop: {e}")
+        print(f"\nError: {e}")
     finally:
-        # This cleanup runs if the server stops for reasons other than SIGINT
         print("Cleanup initiated...")
         if rclpy.ok():
-            if ros_node: ros_node.cleanup()
+            if ros_node:
+                ros_node.cleanup()
             rclpy.try_shutdown()
         if ros_thread.is_alive():
             ros_thread.join(timeout=0.5)

@@ -116,3 +116,11 @@ def generate_launch_description():
         command_forwarder_node
     ])
 
+    # Enforce colorized output
+    for action in ld.entities:
+        if hasattr(action, 'execute_process_kwargs'):
+             action.execute_process_kwargs.setdefault('env', {}) # Ensure env exists
+             action.execute_process_kwargs['env']['RCUTILS_COLORIZED_OUTPUT'] = '1'
+
+    return ld
+

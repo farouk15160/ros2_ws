@@ -18,6 +18,10 @@ joint_trajectory_controller:
       - link_3_wrist_to_gripper_base_joint
       - gripper
 
+    allow_partial_joints_goal: true
+    open_loop_control: true
+    allow_integration_in_goal_trajectories: true
+    
     command_interfaces:
       - position
 

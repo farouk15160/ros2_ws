@@ -15,8 +15,26 @@ CONFIG_PACKET_SIZE = struct.calcsize(CONFIG_PACKET_FORMAT)
 STATUS_TIMEOUT_SEC = 0.5
 
 # --- NEW V4.0: Default filenames for persistence ---
-DEFAULT_POSITIONS_FILE = "saved_positions.json"
-DEFAULT_SEQUENCE_FILE = "current_sequence.json"
+# Save data files in user's home directory - paths resolved at runtime only
+def get_data_dir():
+    """Get data directory at runtime (never at build time)."""
+    import os
+    data_dir = os.path.expanduser("~/.visiona_bridge")
+    os.makedirs(data_dir, exist_ok=True)
+    return data_dir
+
+def get_positions_file():
+    """Get positions file path at runtime."""
+    import os
+    return os.path.join(get_data_dir(), "saved_positions.json")
+
+def get_sequence_file():
+    """Get sequence file path at runtime."""
+    import os
+    return os.path.join(get_data_dir(), "current_sequence.json")
+
+# --- V5.0: MCU Communication Logging ---
+MCU_STATUS_PRINT_INTERVAL_SEC = 2.0  # Print MCU status to terminal every N seconds
 
 # Suppress noisy Flask/SocketIO logging
 logging.getLogger('werkzeug').setLevel(logging.ERROR)

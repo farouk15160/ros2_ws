@@ -6,8 +6,14 @@ package_name = 'visiona_bridge'
 
 setup(
     name=package_name,
-    version='0.0.1',
-    packages=[package_name],
+    version='5.0.0',  # Updated version for restructure
+    packages=[
+        package_name,
+        package_name + '.hardware',
+        package_name + '.ros2_interface',
+        package_name + '.gui',
+        package_name + '.state',
+    ],
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),

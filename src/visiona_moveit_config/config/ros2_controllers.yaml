@@ -23,16 +23,14 @@ visiona_arm_controller:
       - link_3_wrist_joint
       - link_3_wrist_to_gripper_base_joint
     command_interfaces:
-      - position
+      []
     state_interfaces:
-      - position
-      - velocity
+      []
 visiona_gripper_controller:
   ros__parameters:
     joints:
       - gripper
     command_interfaces:
-      - position
+      []
     state_interfaces:
-      - position
-      - velocity
+      []
