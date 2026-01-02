@@ -16,7 +16,7 @@ def generate_launch_description():
             {"usb_path": "null"},
             {"confiPath": "/home/farouk/ros2_ws/src/visiona_vision/ascamera/configurationfiles"},
             {"color_pcl": False},
-            {"pub_tfTree": True},
+            {"pub_tfTree": False},
             {"depth_width": 640},
             {"depth_height": 480},
             {"rgb_width": 640},

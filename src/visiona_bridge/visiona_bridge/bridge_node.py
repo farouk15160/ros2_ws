@@ -1253,7 +1253,8 @@ class RobotArmBridge(Node):
         pc.target_point_offset.x = 0.0
         pc.target_point_offset.y = 0.0
         pc.target_point_offset.z = 0.0
-        pc.constraint_region.primitives.append(SolidPrimitive(type=SolidPrimitive.SPHERE, dimensions=[0.01])) # 1cm tolerance
+        pc.target_point_offset.z = 0.0
+        pc.constraint_region.primitives.append(SolidPrimitive(type=SolidPrimitive.SPHERE, dimensions=[0.05])) # 5cm tolerance
         
         # The region pose is the target pose
         region_pose = msg.pose
@@ -1266,9 +1267,9 @@ class RobotArmBridge(Node):
         oc.header.frame_id = self.planning_frame
         oc.link_name = self.ee_link
         oc.orientation = msg.pose.orientation
-        oc.absolute_x_axis_tolerance = 0.1
-        oc.absolute_y_axis_tolerance = 0.1
-        oc.absolute_z_axis_tolerance = 0.1
+        oc.absolute_x_axis_tolerance = 0.5
+        oc.absolute_y_axis_tolerance = 0.5
+        oc.absolute_z_axis_tolerance = 0.5
         oc.weight = 1.0
         constraints.orientation_constraints.append(oc)
         

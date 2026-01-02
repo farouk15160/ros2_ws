@@ -41,7 +41,10 @@
     <disable_collisions link1="camera_link" link2="gripper_base" reason="Never"/>
     <disable_collisions link1="camera_link" link2="link_1_shoulder" reason="Never"/>
     <disable_collisions link1="camera_link" link2="link_2_elbow" reason="Never"/>
+    <disable_collisions link1="camera_link" link2="link_2_elbow" reason="Never"/>
     <disable_collisions link1="camera_link" link2="link_3_wrist" reason="Adjacent"/>
+    <disable_collisions link1="camera_link" link2="base_link" reason="Never"/>
+    <disable_collisions link1="camera_link" link2="base" reason="Never"/>
     <disable_collisions link1="camera_link" link2="left_finger_link" reason="Default"/>
     <disable_collisions link1="camera_link" link2="right_finger_link" reason="Default"/>
     <disable_collisions link1="gripper_base" link2="left_finger_link" reason="Adjacent"/>
