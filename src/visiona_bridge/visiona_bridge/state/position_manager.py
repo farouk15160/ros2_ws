@@ -114,11 +114,16 @@ class PositionManager:
     def save_to_file(self, filename: str):
         """Save all positions to JSON file."""
         filename = filename or "saved_positions.json"
-        filename = "".join(c if c.isalnum() or c in ('_', '.', '-') else '_' for c in filename)
-        if not filename.endswith(".json"):
-            filename += ".json"
         
-        filepath = os.path.join(os.getcwd(), filename)
+        # Check if absolute path (e.g. from bridge_constants)
+        if os.path.isabs(filename):
+            filepath = filename
+        else:
+            # Sanitize relative filename
+            filename = "".join(c if c.isalnum() or c in ('_', '.', '-') else '_' for c in filename)
+            if not filename.endswith(".json"):
+                filename += ".json"
+            filepath = os.path.join(os.getcwd(), filename)
         
         try:
             with self.position_lock, open(filepath, 'w') as f:
@@ -133,11 +138,16 @@ class PositionManager:
     def load_from_file(self, filename: str):
         """Load positions from JSON file."""
         filename = filename or "saved_positions.json"
-        filename = "".join(c if c.isalnum() or c in ('_', '.', '-') else '_' for c in filename)
-        if not filename.endswith(".json"):
-            filename += ".json"
         
-        filepath = os.path.join(os.getcwd(), filename)
+        # Check if absolute path (e.g. from bridge_constants)
+        if os.path.isabs(filename):
+            filepath = filename
+        else:
+            # Sanitize relative filename
+            filename = "".join(c if c.isalnum() or c in ('_', '.', '-') else '_' for c in filename)
+            if not filename.endswith(".json"):
+                filename += ".json"
+            filepath = os.path.join(os.getcwd(), filename)
         
         try:
             if not os.path.exists(filepath):

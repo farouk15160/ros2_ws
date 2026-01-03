@@ -10,7 +10,7 @@
                 <!-- Mock supports position interfacing natively -->
             </xacro:if>
             <xacro:unless value="$(arg use_mock_hardware)">
-                <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+                <plugin>mock_components/GenericSystem</plugin>
             </xacro:unless>
         </hardware>
 

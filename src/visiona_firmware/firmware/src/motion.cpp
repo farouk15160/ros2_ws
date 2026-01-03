@@ -51,8 +51,23 @@ void task_motion_interpolator(void *pvParameters) {
         // Smooth out speed changes
         last_speed_factor = last_speed_factor * 0.9f + inferred_speed * 0.1f;
         
-        // Calculate responsive alpha
-        float alpha = calculate_alpha_from_speed(last_speed_factor);
+        // Calculate responsive alpha with MUCH wider range
+        // Speed 10 (fast): alpha = 0.3
+        // Speed 100: alpha = 0.025  
+        // Speed 300: alpha = 0.005
+        // Speed 500 (slow): alpha = 0.002 (150x slower than fast, very smooth!)
+        float alpha;
+        if (last_speed_factor < 50.0f) {
+            // Fast range: 10-50 → alpha 0.3-0.06
+            alpha = 15.0f / last_speed_factor;
+        } else if (last_speed_factor < 150.0f) {
+            // Medium range: 50-150 → alpha 0.06-0.01
+            alpha = 3.0f / last_speed_factor;
+        } else {
+            // Slow range: 150-500 → alpha 0.01-0.001 (super smooth)
+            alpha = 0.5f / last_speed_factor;
+        }
+        alpha = constrain(alpha, 0.0008f, 0.5f);  // Allow very slow motion
         
         bool all_reached = true;
 

@@ -104,11 +104,16 @@ class SequenceManager:
     def save_to_file(self, filename: str):
         """Save sequence to JSON file."""
         filename = filename or "current_sequence.json"
-        filename = "".join(c if c.isalnum() or c in ('_', '.', '-') else '_' for c in filename)
-        if not filename.endswith(".json"):
-            filename += ".json"
         
-        filepath = os.path.join(os.getcwd(), filename)
+        # Check if absolute path (e.g. from bridge_constants)
+        if os.path.isabs(filename):
+            filepath = filename
+        else:
+            # Sanitize relative filename
+            filename = "".join(c if c.isalnum() or c in ('_', '.', '-') else '_' for c in filename)
+            if not filename.endswith(".json"):
+                filename += ".json"
+            filepath = os.path.join(os.getcwd(), filename)
         
         try:
             with self.sequence_lock, open(filepath, 'w') as f:
@@ -126,11 +131,16 @@ class SequenceManager:
     def load_from_file(self, filename: str):
         """Load sequence from JSON file."""
         filename = filename or "current_sequence.json"
-        filename = "".join(c if c.isalnum() or c in ('_', '.', '-') else '_' for c in filename)
-        if not filename.endswith(".json"):
-            filename += ".json"
         
-        filepath = os.path.join(os.getcwd(), filename)
+        # Check if absolute path (e.g. from bridge_constants)
+        if os.path.isabs(filename):
+            filepath = filename
+        else:
+            # Sanitize relative filename
+            filename = "".join(c if c.isalnum() or c in ('_', '.', '-') else '_' for c in filename)
+            if not filename.endswith(".json"):
+                filename += ".json"
+            filepath = os.path.join(os.getcwd(), filename)
         
         try:
             with open(filepath, 'r') as f:
