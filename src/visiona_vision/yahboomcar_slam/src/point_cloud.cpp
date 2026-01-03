@@ -1,4 +1,4 @@
-#include "point_cloud.h"
+#include "yahboomcar_slam/point_cloud.h"
 
 using namespace std;
 

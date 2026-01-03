@@ -7,6 +7,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression, Command
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+from launch_ros.parameter_descriptions import ParameterValue
 
 def generate_launch_description():
     visiona_bridge_share = FindPackageShare('visiona_bridge')
@@ -20,17 +21,22 @@ def generate_launch_description():
                                              description='Launch RViz')
     camera_arg = DeclareLaunchArgument('camera', default_value='false',
                                         description='Launch camera driver')
+    mapping_arg = DeclareLaunchArgument('mapping', default_value='low',
+                                         choices=['low', 'high'],
+                                         description='Mapping quality: low (2cm, fast) or high (1.5cm, accurate)')
     
     mode = LaunchConfiguration('mode')
     gui = LaunchConfiguration('gui')
     launch_rviz = LaunchConfiguration('launch_rviz')
     camera = LaunchConfiguration('camera')
+    mapping_quality = LaunchConfiguration('mapping')
     
     # Path to Xacro file
     xacro_file = PathJoinSubstitution([visiona_bridge_share, 'urdf', 'visiona.urdf.xacro'])
     
-    # Process Xacro to XML
+    # Process Xacro to XML and wrap as string parameter
     robot_description_content = Command(['xacro ', xacro_file])
+    robot_description_param = ParameterValue(robot_description_content, value_type=str)
     
     # Robot State Publisher
     robot_state_publisher = Node(
@@ -39,7 +45,7 @@ def generate_launch_description():
         name='robot_state_publisher',
         output='screen',
         parameters=[{
-            'robot_description': robot_description_content,
+            'robot_description': robot_description_param,
             'use_sim_time': False
         }]
     )
@@ -50,7 +56,7 @@ def generate_launch_description():
         package='controller_manager',
         executable='ros2_control_node',
         parameters=[
-            {'robot_description': robot_description_content},
+            {'robot_description': robot_description_param},
             PathJoinSubstitution([visiona_bridge_share, 'config', 'visiona_controllers.yaml'])
         ],
         output='screen'
@@ -139,11 +145,59 @@ def generate_launch_description():
         condition=LaunchConfigurationEquals('mode', 'real')
     )
     
+    # ========== 3D MAPPING WITH OCTOMAP (Camera mode only) ==========
+    # Octomap builds a 3D voxel map as the arm moves - perfect for stationary arms!
+    # Quality can be set via mapping:=low or mapping:=high
+    octomap_server = Node(
+        package='octomap_server',
+        executable='octomap_server_node',
+        name='octomap_server',
+        output='screen',
+        condition=LaunchConfigurationEquals('camera', 'true'),
+        parameters=[{
+            # RESOLUTION: Conditional based on mapping quality
+            'resolution': PythonExpression([
+                "'0.015' if '", mapping_quality, "' == 'high' else '0.02'"
+            ]),
+            'frame_id': 'world',
+            
+            # SENSOR MODEL: Conditional based on mapping quality
+            'sensor_model/max_range': PythonExpression([
+                "1.8 if '", mapping_quality, "' == 'high' else 2.0"
+            ]),
+            'sensor_model/min': PythonExpression([
+                "0.15 if '", mapping_quality, "' == 'high' else 0.1"
+            ]),
+            'sensor_model/hit': PythonExpression([
+                "0.8 if '", mapping_quality, "' == 'high' else 0.7"
+            ]),
+            'sensor_model/miss': PythonExpression([
+                "0.35 if '", mapping_quality, "' == 'high' else 0.4"
+            ]),
+            
+            # COMMON SETTINGS
+            'filter_ground': False,  # Keep ground in workspace
+            'filter_speckles': True,  # Remove noise
+            'compress_map': True,  # Save memory
+            'latch': True,  # Keep publishing map
+            'occupancy_min_z': -0.5,  # Workspace bounds
+            'occupancy_max_z': 1.5,
+        }],
+        remappings=[
+            ('cloud_in', '/ascamera_hp60c/camera_publisher/depth0/points'),
+        ]
+    )
+    
+    # ==============================================================================
+    # Launch Description - Combine all nodes
+    # ==============================================================================
+    
     return LaunchDescription([
         mode_arg,
         gui_arg,
         launch_rviz_arg,
         camera_arg,
+        mapping_arg,  # Mapping quality: low or high
         robot_state_publisher,
         ros2_control_node,
         delay_joint_state_broadcaster,
@@ -151,5 +205,6 @@ def generate_launch_description():
         camera_launch,
         camera_tf_publisher,
         node_rviz,
-        web_node
+        web_node,
+        octomap_server,    # 3D mapping with Octomap
     ])

@@ -112,7 +112,9 @@ sudo apt install -y \
     git \
     cmake \
     build-essential \
-    ros-humble-moveit
+    ros-humble-moveit \
+    ros-humble-octomap-server \
+    ros-humble-octomap-rviz-plugins
 
 
 # ==============================================================================

@@ -22,7 +22,7 @@ def generate_launch_description():
 
     pointcloud_mapping_node = Node(
         package='yahboomcar_slam',
-        executable='pointcloud_mapping',
+        executable='point_cloud_mapping',
         name='pointcloud_mapping_node',
         output="screen",
         parameters=[pointcloud_mapping_config]

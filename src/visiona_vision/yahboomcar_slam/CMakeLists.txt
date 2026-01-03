@@ -26,9 +26,44 @@ find_package(image_transport REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(PCL REQUIRED)
+find_package(pcl_conversions REQUIRED)
+find_package(pcl_ros REQUIRED)
 
+include_directories(
+  include
+  ${PCL_INCLUDE_DIRS}
+)
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
-install(DIRECTORY launch params  rviz DESTINATION share/${PROJECT_NAME})
+# Build point cloud mapping executable
+add_executable(point_cloud_mapping 
+  src/point_cloud.cpp
+  src/point_cloud_main.cpp
+)
+
+ament_target_dependencies(point_cloud_mapping
+  rclcpp
+  std_msgs
+  sensor_msgs
+  cv_bridge
+  image_transport
+  tf2_ros
+  message_filters
+  geometry_msgs
+  pcl_conversions
+  pcl_ros
+)
+
+target_link_libraries(point_cloud_mapping ${PCL_LIBRARIES})
+
+install(TARGETS
+  point_cloud_mapping
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY launch params rviz DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
