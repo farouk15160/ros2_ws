@@ -30,7 +30,7 @@ class CartesianInterface:
         # Configuration
         self.planning_frame = 'world'
         self.ee_link = 'gripper_base'
-        self.move_group_name = 'visiona_arm'
+        self.move_group_name = 'arm'  # Matches SRDF group name
         
         # Workspace bounds (meters)
         self.workspace_x_range = (-0.35, 0.35)

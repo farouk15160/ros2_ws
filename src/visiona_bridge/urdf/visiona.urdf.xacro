@@ -151,7 +151,7 @@
         <parent link="base_link" />
         <child link="link_1_shoulder" />
         <axis xyz="1 0 0.0" />
-        <limit lower="-3.14" upper="3.14" effort="100.0" velocity="10.0" />
+        <limit lower="0" upper="3.14" effort="100.0" velocity="10.0" />
         <dynamics damping="1.0" friction="1.0" />
 
     </joint>
@@ -161,7 +161,7 @@
         <parent link="link_1_shoulder" />
         <child link="link_2_elbow" />
         <axis xyz="1 0 0.0" />
-        <limit lower="-3.14" upper="3.14" effort="100.0" velocity="10.0" />
+        <limit lower="0" upper="3.14" effort="100.0" velocity="10.0" />
         <dynamics damping="1.0" friction="1.0" />
 
     </joint>
@@ -171,7 +171,7 @@
         <parent link="link_2_elbow" />
         <child link="link_3_wrist" />
         <axis xyz="1 0 0.0" />
-        <limit lower="-3.14" upper="3.14" effort="100.0" velocity="10.0" />
+        <limit lower="0" upper="3.14" effort="100.0" velocity="10.0" />
         <dynamics damping="1.0" friction="1.0" />
 
     </joint>
