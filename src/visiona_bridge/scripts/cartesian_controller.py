@@ -14,7 +14,7 @@ class CartesianController(Node):
         super().__init__('cartesian_controller')
         
         # --- Parameters ---
-        self.declare_parameter('group_name', 'visiona_arm')
+        self.declare_parameter('group_name', 'arm')  # Fixed: was 'visiona_arm', should be 'arm'
         self.declare_parameter('end_effector_link', 'gripper_base') # Check SRDF, seems to be gripper_base
         self.declare_parameter('planning_frame', 'world')
 

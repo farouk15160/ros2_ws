@@ -1,20 +1,17 @@
 """
-Cartesian Interface for MoveIt Integration.
+Cartesian Interface for Simple IK Solver Integration.
 
-Handles cartesian space control and MoveIt action integration.
+Handles cartesian space control via direct topic publishing to simple_ik_solver.
+No MoveIt dependency - fast and lightweight!
 """
 
 import rclpy.time
 from tf2_ros import Buffer, TransformListener
-from rclpy.action import ActionClient
-from moveit_msgs.action import MoveGroup
-from moveit_msgs.msg import Constraints, PositionConstraint, OrientationConstraint
-from shape_msgs.msg import SolidPrimitive
 from geometry_msgs.msg import PoseStamped
 
 
 class CartesianInterface:
-    """Manages cartesian space control and MoveIt integration."""
+    """Manages cartesian space control via simple IK solver."""
     
     def __init__(self, node, logger):
         """
@@ -30,21 +27,24 @@ class CartesianInterface:
         # Configuration
         self.planning_frame = 'world'
         self.ee_link = 'gripper_base'
-        self.move_group_name = 'arm'  # Matches SRDF group name
         
         # Workspace bounds (meters)
-        self.workspace_x_range = (-0.35, 0.35)
-        self.workspace_y_range = (-0.35, 0.35)
-        self.workspace_z_range = (0.05, 0.50)
+        self.workspace_x_range = (-0.5, 0.5)
+        self.workspace_y_range = (-0.5, 0.5)
+        self.workspace_z_range = (0.0, 0.8)
         
         # TF2 for pose lookups
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, node)
         
-        # MoveIt action client
-        self._move_action_client = ActionClient(node, MoveGroup, 'move_action')
+        # Publisher for cartesian commands (simple IK solver)
+        self.cartesian_pub = node.create_publisher(
+            PoseStamped,
+            '/visiona/cartesian_command',
+            10
+        )
         
-        logger.info("Cartesian Interface Initialized.")
+        logger.info("✅ Cartesian Interface Initialized (Simple IK Mode)")
     
     def get_current_pose(self):
         """
@@ -77,7 +77,10 @@ class CartesianInterface:
             # Get current pose
             t = self.get_current_pose()
             if not t:
-                self.logger.warn("TF not available for jogging")
+                self.logger.error("❌ TF not available for jogging - cannot get current end-effector pose")
+                if socketio:
+                    from ..gui.socketio_handlers import emit_log_message
+                    emit_log_message(socketio, 'error', 'TF not available - cannot jog')
                 return False
             
             # Calculate target
@@ -99,13 +102,16 @@ class CartesianInterface:
                     emit_log_message(socketio, 'warn', f'Jog outside workspace limits')
                 return False
             
-            self.logger.info(f"Jogging to: {x:.2f}, {y:.2f}, {z:.2f}")
+            self.logger.info(f"✅ Jogging to: {x:.2f}, {y:.2f}, {z:.2f}")
             
-            # Send to MoveIt
+            # Send to simple IK solver
             return self.handle_target_pose(target_pose)
             
         except Exception as e:
-            self.logger.error(f"Jog failed: {e}")
+            self.logger.error(f"❌ Jog failed: {e}")
+            if socketio:
+                from ..gui.socketio_handlers import emit_log_message
+                emit_log_message(socketio, 'error', f'Jog failed: {str(e)}')
             return False
     
     def _in_workspace(self, x, y, z):
@@ -122,76 +128,14 @@ class CartesianInterface:
             msg: Target pose message
             
         Returns:
-            True if goal sent, False otherwise
+            True (always succeeds - IK solver handles execution)
         """
         self.logger.info(
-            f'Cartesian target: {msg.pose.position.x:.2f}, '
+            f'🎯 Cartesian target: {msg.pose.position.x:.2f}, '
             f'{msg.pose.position.y:.2f}, {msg.pose.position.z:.2f}'
         )
         
-        # Check if action server is available
-        if not self._move_action_client.wait_for_server(timeout_sec=2.0):
-            self.logger.error('MoveGroup action server not available.')
-            return False
-        
-        # Build goal
-        goal_msg = MoveGroup.Goal()
-        goal_msg.request.group_name = self.move_group_name
-        goal_msg.request.num_planning_attempts = 10
-        goal_msg.request.allowed_planning_time = 1.0
-        goal_msg.request.max_velocity_scaling_factor = 0.5
-        goal_msg.request.max_acceleration_scaling_factor = 0.5
-        
-        # Create constraints
-        constraints = Constraints()
-        constraints.name = "cartesian_goal"
-        
-        # Position constraint
-        pc = PositionConstraint()
-        pc.header.frame_id = self.planning_frame
-        pc.link_name = self.ee_link
-        pc.target_point_offset.x = 0.0
-        pc.target_point_offset.y = 0.0
-        pc.target_point_offset.z = 0.0
-        pc.constraint_region.primitives.append(
-            SolidPrimitive(type=SolidPrimitive.SPHERE, dimensions=[0.05])
-        )
-        pc.constraint_region.primitive_poses.append(msg.pose)
-        pc.weight = 1.0
-        constraints.position_constraints.append(pc)
-        
-        # Orientation constraint
-        oc = OrientationConstraint()
-        oc.header.frame_id = self.planning_frame
-        oc.link_name = self.ee_link
-        oc.orientation = msg.pose.orientation
-        oc.absolute_x_axis_tolerance = 0.5
-        oc.absolute_y_axis_tolerance = 0.5
-        oc.absolute_z_axis_tolerance = 0.5
-        oc.weight = 1.0
-        constraints.orientation_constraints.append(oc)
-        
-        goal_msg.request.goal_constraints.append(constraints)
-        
-        # Send goal
-        self.logger.info('Sending MoveGroup Goal...')
-        self._send_goal_future = self._move_action_client.send_goal_async(goal_msg)
-        self._send_goal_future.add_done_callback(self._goal_response_callback)
+        # Publish to simple IK solver (no action client needed!)
+        self.cartesian_pub.publish(msg)
         
         return True
-    
-    def _goal_response_callback(self, future):
-        """Handle MoveGroup goal response."""
-        goal_handle = future.result()
-        if not goal_handle.accepted:
-            self.logger.info('Cartesian Goal rejected')
-            return
-        
-        self.logger.info('Cartesian Goal accepted. Executing...')
-        self._get_result_future = goal_handle.get_result_async()
-        self._get_result_future.add_done_callback(self._result_callback)
-    
-    def _result_callback(self, future):
-        """Handle MoveGroup result."""
-        result = future.result().result
-        self.logger.info(f'Cartesian Result Error Code: {result.error_code.val}')

@@ -7,13 +7,17 @@ Provides REST API endpoints for controlling the robot from the web GUI.
 from flask import jsonify, request
 
 
-def register_routes(app, ros_node):
+def register_routes(app, ros_node, cartesian_interface=None, socketio=None, node=None, logger=None):
     """
     Register all API routes with the Flask app.
     
     Args:
         app: Flask application instance
         ros_node: ROS bridge node instance
+        cartesian_interface: Cartesian control interface (optional)
+        socketio: SocketIO instance (optional)
+        node: ROS2 node for timestamps (optional)
+        logger: Logger instance (optional)
     """
     
     @app.route('/')
@@ -117,14 +121,60 @@ def register_routes(app, ros_node):
         return jsonify({"status": "ok"})
     
     @app.route('/api/jog', methods=['POST'])
-    def jog_cartesian_api():
+    def jog():
+        """Handle jogging requests"""
+        logger.info("🔍 /api/jog route called!")
         data = request.json
-        dx = data.get('x', 0.0)
-        dy = data.get('y', 0.0)
-        dz = data.get('z', 0.0)
-        if ros_node:
-            ros_node.jog_cartesian(dx, dy, dz)
-        return jsonify({"status": "ok"})
+        logger.info(f"🔍 Received jog data: {data}")
+        
+        dx = float(data.get('x', 0))
+        dy = float(data.get('y', 0))
+        dz = float(data.get('z', 0))
+        
+        logger.info(f'🕹️ Jog request: dx={dx}, dy={dy}, dz={dz}')
+        
+        if cartesian_interface:
+            logger.info("✅ Calling cartesian_interface.jog()")
+            success = cartesian_interface.jog(dx, dy, dz, socketio)
+            logger.info(f"✅ Jog returned: {success}")
+            return jsonify({'success': success})
+        
+        logger.error("❌ Cartesian interface not available for jog!")
+        return jsonify({'success': False, 'error': 'Cartesian interface not available'})
+    
+    @app.route('/api/move_xyz', methods=['POST'])
+    def move_xyz():
+        """Move to absolute XYZ position"""
+        logger.info("🔍 /api/move_xyz route called!")
+        data = request.json
+        logger.info(f"🔍 Received data: {data}")
+        
+        x = float(data['x'])
+        y = float(data['y'])
+        z = float(data['z'])
+        
+        logger.info(f'📍 Move to XYZ request: x={x}, y={y}, z={z}')
+        
+        # Create target pose message
+        from geometry_msgs.msg import PoseStamped
+        target_pose = PoseStamped()
+        target_pose.header.frame_id = 'world'
+        target_pose.header.stamp = node.get_clock().now().to_msg()
+        target_pose.pose.position.x = x
+        target_pose.pose.position.y = y
+        target_pose.pose.position.z = z
+        target_pose.pose.orientation.w = 1.0  # Identity quaternion
+        
+        logger.info(f"🔍 cartesian_interface available: {cartesian_interface is not None}")
+        
+        if cartesian_interface:
+            logger.info("✅ Calling cartesian_interface.handle_target_pose()")
+            success = cartesian_interface.handle_target_pose(target_pose)
+            logger.info(f"✅ handle_target_pose returned: {success}")
+            return jsonify({'success': success})
+        
+        logger.error("❌ Cartesian interface not available!")
+        return jsonify({'success': False, 'error': 'Cartesian interface not available'})
     
     @app.route('/api/set_collision_safety', methods=['POST'])
     def set_collision_safety():

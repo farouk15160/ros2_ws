@@ -1,0 +1,49 @@
+visual_servo_controller:
+  ros__parameters:
+    # Control loop
+    control_rate: 25.0  # Hz
+    
+    # PBVS gains
+    kp_linear_x: 0.5
+    kp_linear_y: 0.5
+    kp_linear_z: 0.5
+    kp_angular_roll: 0.3
+    kp_angular_pitch: 0.3
+    kp_angular_yaw: 0.3
+    
+    # Convergence criteria
+    position_tolerance: 0.01      # meters
+    orientation_tolerance: 0.05   # radians
+    velocity_tolerance: 0.005     # m/s
+    
+    # Safety limits
+    max_linear_velocity: 0.1    # m/s
+    max_angular_velocity: 0.5   # rad/s
+    max_acceleration: 0.5       # m/s²
+    
+    # Workspace boundaries
+    x_min: -0.3
+    x_max: 0.5
+    y_min: -0.4
+    y_max: 0.4
+    z_min: 0.0
+    z_max: 0.6
+    
+    # Collision avoidance
+    enable_octomap_check: true
+    collision_padding: 0.05     # meters
+    check_frequency: 10         # Hz
+    
+    # Vision tracking
+    loss_timeout: 2.0           # seconds
+    min_feature_quality: 0.3
+    
+    # Recovery behaviors
+    enable_joint_fallback: true
+    retry_attempts: 3
+    backoff_distance: 0.05      # meters
+    
+    # Frames
+    base_frame: "world"
+    end_effector_frame: "gripper_base"
+    camera_frame: "ascamera_hp60c_ascamera_0"

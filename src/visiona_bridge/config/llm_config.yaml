@@ -1,0 +1,24 @@
+llm_task_planner:
+  ros__parameters:
+    # Model settings
+    model_path: "/home/farouk/.cache/models/llama-3.2-3b-q4_k_m.gguf"
+    model_type: "llama"
+    context_length: 2048
+    n_gpu_layers: 35  # Offload to Jetson GPU
+    
+    # Generation parameters
+    temperature: 0.3
+    max_tokens: 512
+    top_p: 0.9
+    repeat_penalty: 1.1
+    
+    # Language support
+    language: "en"
+    supported_languages: ["en", "de"]
+    
+    # Task primitives
+    available_actions: ["move_to", "grasp", "release", "scan_area", "home", "wait"]
+    
+    # Performance
+    enable_caching: true
+    cache_size: 10  # Cache last 10 commands

@@ -114,7 +114,8 @@ sudo apt install -y \
     build-essential \
     ros-humble-moveit \
     ros-humble-octomap-server \
-    ros-humble-octomap-rviz-plugins
+    ros-humble-octomap-rviz-plugins \   
+    ros-humble-visp
 
 
 # ==============================================================================

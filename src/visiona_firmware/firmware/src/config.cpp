@@ -4,7 +4,7 @@
 const uint8_t SERVOS[SERVOS_NUMBER] = {0, 7, 9, 11, 13, 15};
 float SERVOS_MIN[SERVOS_NUMBER] = {15.0f, 40.0f, 0.0f, 30.0f, 0.0f, 0.0f};
 float SERVOS_MAX[SERVOS_NUMBER] = {345.0f, 150.0f, 145.0f, 130.0f, 180.0f, 120.0f};
-const float HOME_POSITION[SERVOS_NUMBER] = {133.0f, 100.00, 110.00, 130.00, 15.00, 60.00};
+const float HOME_POSITION[SERVOS_NUMBER] = {90.0f, 90.0f, 90.0f, 90.0f, 90.0f, 0.0f};
 const bool SERVO_INVERT[SERVOS_NUMBER] = {false, true, false, false, false, false};
 const int16_t TRIM_US[SERVOS_NUMBER] = {0, 0, 0, 0, 0, 0};
 

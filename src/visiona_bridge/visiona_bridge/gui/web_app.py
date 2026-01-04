@@ -57,8 +57,16 @@ def create_app(ros_node):
     if ros_node:
         ros_node.socketio = socketio
     
-    # Register all API routes
-    register_routes(app, ros_node)
+    # Register Flask routes
+    from .routes import register_routes
+    register_routes(
+        app, 
+        ros_node,
+        cartesian_interface=ros_node.cartesian if hasattr(ros_node, 'cartesian') else None,
+        socketio=socketio,
+        node=ros_node,
+        logger=ros_node.get_logger()
+    )
     
     # Initialize SocketIO with app
     socketio.init_app(app)

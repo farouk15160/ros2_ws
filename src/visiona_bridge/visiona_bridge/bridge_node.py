@@ -60,6 +60,10 @@ class RobotArmBridge(Node):
         self.is_connected = False
         self.last_status_time = self.get_clock().now()
         
+        # Initialize Cartesian Interface FIRST (needed by routes)
+        self.cartesian = CartesianInterface(self, self.get_logger())
+        self.get_logger().info("✅ Cartesian Interface Initialized (Simple IK Mode)")
+        
         # Initialize layers
         self._init_hardware_layer()
         self._init_state_managers()

@@ -569,6 +569,44 @@
                 <button onclick="jog(0, 0, -0.01)">-</button>
               </div>
             </div>
+            <div class="xyz-section">
+              <h3 style="color: #e0e0e0; margin-bottom: 10px;">🎯 Cartesian XYZ Control</h3>
+              <p style="color: #999; font-size: 12px; margin-bottom: 15px;">Quick jog buttons (±1cm per click):</p>
+
+              <div class="xyz-row">
+                <label style="width: 30px;">X:</label>
+                <button onclick="jog(-0.01, 0, 0)">-</button>
+                <button onclick="jog(0.01, 0, 0)">+</button>
+                <input type="number" id="target_x" step="0.01" value="0.30" style="width: 80px; margin-left: 10px;"
+                  placeholder="X (m)">
+              </div>
+
+              <div class="xyz-row">
+                <label style="width: 30px;">Y:</label>
+                <button onclick="jog(0, -0.01, 0)">-</button>
+                <button onclick="jog(0, 0.01, 0)">+</button>
+                <input type="number" id="target_y" step="0.01" value="0.00" style="width: 80px; margin-left: 10px;"
+                  placeholder="Y (m)">
+              </div>
+
+              <div class="xyz-row">
+                <label style="width: 30px;">Z:</label>
+                <button onclick="jog(0, 0, -0.01)">-</button>
+                <button onclick="jog(0, 0, 0.01)">+</button>
+                <input type="number" id="target_z" step="0.01" value="0.40" style="width: 80px; margin-left: 10px;"
+                  placeholder="Z (m)">
+              </div>
+
+              <button onclick="moveToXYZ()"
+                style="width: 100%; margin-top: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                📍 Go to XYZ Position
+              </button>
+
+              <p style="color: #666; font-size: 11px; margin-top: 10px; font-style: italic;">
+                ⚡ Using fast IK solver (no MoveIt planning needed!)
+              </p>
+            </div>
+
             <div style="margin-top: 10px; text-align: center; font-size: 0.8em; color: gray;">
               Step: 1cm (0.01m)
             </div>
@@ -851,8 +889,39 @@
       fetch('/api/jog', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ x: x, y: y, z: z })
-      });
+        body: JSON.stringify({ x, y, z })
+      })
+        .then(response => response.json())
+        .then(data => console.log('Jog:', data))
+        .catch(err => console.error('Jog error:', err));
+    }
+
+    function moveToXYZ() {
+      const x = parseFloat(document.getElementById('target_x').value);
+      const y = parseFloat(document.getElementById('target_y').value);
+      const z = parseFloat(document.getElementById('target_z').value);
+
+      if (isNaN(x) || isNaN(y) || isNaN(z)) {
+        alert('Please enter valid numbers for X, Y, Z');
+        return;
+      }
+
+      fetch('/api/move_xyz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ x, y, z })
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Move to XYZ:', data);
+          if (data.success) {
+            alert(`Moving to X:${x}, Y:${y}, Z:${z}`);
+          }
+        })
+        .catch(err => {
+          console.error('Move XYZ error:', err);
+          alert('Failed to move to XYZ position');
+        });
     }
 
     // --- initializeGui ---

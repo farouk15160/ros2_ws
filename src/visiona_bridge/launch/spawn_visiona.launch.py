@@ -17,19 +17,34 @@ def generate_launch_description():
                                       description='Mode: real, sim, or gazebo')
     gui_arg = DeclareLaunchArgument('gui', default_value='true',
                                      description='Launch web GUI')
-    launch_rviz_arg = DeclareLaunchArgument('launch_rviz', default_value='true',
-                                             description='Launch RViz')
+    
+    viz_arg = DeclareLaunchArgument(
+        'viz',
+        default_value='none',
+        choices=['none', 'rviz'],
+        description='Visualization mode: none, rviz'
+    )
+    
     camera_arg = DeclareLaunchArgument('camera', default_value='false',
                                         description='Launch camera driver')
     mapping_arg = DeclareLaunchArgument('mapping', default_value='low',
                                          choices=['low', 'high'],
-                                         description='Mapping quality: low (2cm, fast) or high (1.5cm, accurate)')
+                                         description='Mapping quality: low (2cm, fast) or high (5mm, accurate)')
+    
+    # NEW: LLM/VLA Control option
+    llm_arg = DeclareLaunchArgument('llm', default_value='false',
+                                    description='Enable LLM/VLA natural language control')
+    language_arg = DeclareLaunchArgument('language', default_value='en',
+                                         choices=['en', 'de'],
+                                         description='LLM language (English or German)')
     
     mode = LaunchConfiguration('mode')
     gui = LaunchConfiguration('gui')
-    launch_rviz = LaunchConfiguration('launch_rviz')
+    viz = LaunchConfiguration('viz')
     camera = LaunchConfiguration('camera')
     mapping_quality = LaunchConfiguration('mapping')
+    llm = LaunchConfiguration('llm')
+    language = LaunchConfiguration('language')
     
     # Path to Xacro file
     xacro_file = PathJoinSubstitution([visiona_bridge_share, 'urdf', 'visiona.urdf.xacro'])
@@ -62,15 +77,41 @@ def generate_launch_description():
         output='screen'
     )
     
-    # RViz
+    # RViz (basic visualization)
     rviz_config = PathJoinSubstitution([visiona_bridge_share, 'rviz', 'view_robot.rviz'])
     node_rviz = Node(
         package='rviz2',
         executable='rviz2',
         name='rviz2',
         arguments=['-d', rviz_config],
-        condition=IfCondition(launch_rviz),
+        condition=IfCondition(PythonExpression(["'", viz, "' == 'rviz'"])),
         output='screen'
+    )
+    
+    # Simple IK Solver (always enabled for Cartesian XYZ control)
+    simple_ik_node = Node(
+        package='visiona_bridge',
+        executable='simple_ik_solver',
+        name='simple_ik_solver',
+        output='screen',
+        parameters=[
+            PathJoinSubstitution([
+                visiona_bridge_share,
+                'config',
+                'simple_ik_config.yaml'
+            ])
+        ]
+    )
+    
+    # LLM Control System
+    llm_control_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            PathJoinSubstitution([visiona_bridge_share, 'launch', 'llm_control.launch.py'])
+        ]),
+        launch_arguments={
+            'language': language,
+        }.items(),
+        condition=IfCondition(llm)
     )
     
     # Camera Launch
@@ -193,18 +234,37 @@ def generate_launch_description():
     # ==============================================================================
     
     return LaunchDescription([
+        # Arguments
         mode_arg,
         gui_arg,
-        launch_rviz_arg,
+        viz_arg,  # Visualization option
         camera_arg,
-        mapping_arg,  # Mapping quality: low or high
+        mapping_arg,
+        llm_arg,  # NEW: LLM control
+        language_arg,  # NEW: LLM language
+        
+        # Core nodes
         robot_state_publisher,
         ros2_control_node,
         delay_joint_state_broadcaster,
         delay_joint_trajectory_controller,
+        
+        # Camera
         camera_launch,
         camera_tf_publisher,
-        node_rviz,
+        
+        # Visualization (conditional)
+        node_rviz,     # if viz:=rviz
+        
+        # Simple IK Solver (always enabled)
+        simple_ik_node,
+        
+        # GUI
         web_node,
-        octomap_server,    # 3D mapping with Octomap
+        
+        # 3D Mapping
+        octomap_server,
+        
+        # LLM Control (conditional)
+        llm_control_launch,  # if llm:=true
     ])
