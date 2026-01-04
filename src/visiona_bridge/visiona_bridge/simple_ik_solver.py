@@ -48,10 +48,10 @@ class SimpleIKSolver(Node):
         # Based on URDF joint origins and orientations
         # URDF shows: base(z=-0.001), shoulder(z=0.14), elbow(z=0.185), wrist(y=-0.119)
         self.dh_params = [
-            [0.0,     np.pi/2,  0.14,   0.0],      # Joint 1: Base rotation (z-axis), shoulder height
-            [0.185,   0.0,      0.0,    np.pi/2],  # Joint 2: Shoulder (185mm upper arm)
-            [0.119,   0.0,      0.0,    0.0],      # Joint 3: Elbow (119mm forearm)
-            [0.085,   0.0,      0.0,    0.0],      # Joint 4: Wrist with gripper offset (85mm)
+            [0.0,     np.pi/2,   0.14,   0.0],       # Joint 1
+            [0.185,   0.0,       0.0,    0.0],       # Joint 2: Option 3 worked!
+            [0.119,   0.0,       0.0,    0.0],       # Joint 3
+            [0.12,    0.0,       0.0,    0.0],       # Joint 4: Increased to reach gripper tip
         ]
         
         # No separate gripper offset needed (included in Joint 4)
