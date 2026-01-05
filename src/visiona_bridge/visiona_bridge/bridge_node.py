@@ -69,6 +69,11 @@ class RobotArmBridge(Node):
         self._init_state_managers()
         self._init_ros2_layer()
         
+        # Now it's safe to activate simulation mode (after ROS2 layer is ready)
+        if self.mode == 'sim':
+            self.hardware.set_simulation_mode(True)
+            self.is_connected = True  # Pretend we're connected in sim
+        
         # Status timeout timer
         self.estop_timer = self.create_timer(STATUS_TIMEOUT_SEC + 0.1, self._check_timeout)
         
@@ -101,10 +106,7 @@ class RobotArmBridge(Node):
         else:
             self.serial = None
             self.get_logger().info(f"Running in {self.mode} mode - serial connection disabled")
-            # In sim mode, enable simulation immediately
-            if self.mode == 'sim':
-                self.hardware.set_simulation_mode(True)
-                self.is_connected = True  # Pretend we're connected in sim
+            # Don't activate simulation here - defer until after ROS2 layer init
     
     def _init_state_managers(self):
         """Initialize sequence and position managers."""

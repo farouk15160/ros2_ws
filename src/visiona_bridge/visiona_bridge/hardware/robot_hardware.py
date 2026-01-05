@@ -90,7 +90,7 @@ class RobotHardware:
             
             self._update_state(main, grip, joint_angles, collision_flag)
         except Exception as e:
-            self.logger.error(f"Failed to process status packet: {e}", exc_info=True)
+            self.logger.error(f"Failed to process status packet: {e}")
     
     def process_config_packet(self, data: bytes):
         """Process a configuration packet from the hardware."""
@@ -225,7 +225,7 @@ class RobotHardware:
             try:
                 self._update_state(sim_main_current, sim_gripper_current, new_angles, sim_estop)
             except Exception as e:
-                self.logger.error(f"Error in sim worker update: {e}", exc_info=True)
+                self.logger.error(f"Error in sim worker update: {e}")
             
             time.sleep(sleep_duration)
         
