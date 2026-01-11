@@ -229,9 +229,9 @@ class SimpleIKSolver(Node):
         
         # Define safe workspace bounds based on robot geometry
         # These limits ensure the target is physically reachable
-        x_min, x_max = 0.08, 0.50   # 8cm to 50cm forward reach
-        y_min, y_max = -0.35, 0.35  # ±35cm lateral reach
-        z_min, z_max = 0.05, 0.50   # 5cm to 50cm height above base
+        x_min, x_max = -0.63, 0.63   # ±63cm reach
+        y_min, y_max = -0.63, 0.63   # ±63cm lateral reach
+        z_min, z_max = 0.0, 0.63     # 0 to 63cm height above base
         
         # CRITICAL: Minimum distance from base origin to prevent self-collision
         dist_from_base = np.sqrt(x**2 + y**2 + z**2)
@@ -268,12 +268,12 @@ class SimpleIKSolver(Node):
         Returns:
             bool: True if all joints within limits, False otherwise
         """
-        # Joint limits: J0 = 0-360° (2π), J1-J3 = 0-180° (π)
+        # Joint limits: J0 = -360° to +360° (±2π), J1-J3 = 0-180° (π)
         joint_limits = [
-            (0.0, 2 * np.pi),   # J0: 0-360°
-            (0.0, np.pi),       # J1: 0-180°
-            (0.0, np.pi),       # J2: 0-180°
-            (0.0, np.pi),       # J3: 0-180°
+            (-2 * np.pi, 2 * np.pi),   # J0: -360° to +360°
+            (0.0, np.pi),              # J1: 0-180°
+            (0.0, np.pi),              # J2: 0-180°
+            (0.0, np.pi),              # J3: 0-180°
         ]
         
         for i in range(4):

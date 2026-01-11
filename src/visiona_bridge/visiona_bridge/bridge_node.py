@@ -289,16 +289,16 @@ class RobotArmBridge(Node):
         
         # Check 1: Joint limits
         # J0 (base): 0-360°, J1-J3: 0-180°
-        joint_limits = [(0, 360), (0, 180), (0, 180), (0, 180)]
+        joint_limits = [(-360, 360), (0, 180), (0, 180), (0, 180)]
         for i, angle in enumerate(angles_deg[:4]):
             min_lim, max_lim = joint_limits[i]
             if angle < min_lim or angle > max_lim:
                 return False, f'Joint {i} angle {angle:.1f}° out of range [{min_lim}°, {max_lim}°]'
         
         # Check 2: Workspace limits
-        x_min, x_max = 0.08, 0.50
-        y_min, y_max = -0.35, 0.35
-        z_min, z_max = 0.05, 0.50
+        x_min, x_max = -0.63, 0.63
+        y_min, y_max = -0.63, 0.63
+        z_min, z_max = 0.0, 0.63
         
         if x < x_min or x > x_max:
             return False, f'X={x:.3f}m out of bounds [{x_min}, {x_max}]'

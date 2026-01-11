@@ -52,7 +52,7 @@ class RobotHardware:
         self.last_terminal_print_time = time.time()
         
         # Configuration
-        self.servos_min = [0.0] * 6
+        self.servos_min = [-360 , 0.0 , 0.0 , 0.0 , 0.0 , 0.0]
         self.servos_max = [360.0 , 180.0 , 180.0 , 180.0 , 180.0 , 180.0 ]
         self.collision_threshold = 5.0
         self.collision_deviation_threshold = 1.0

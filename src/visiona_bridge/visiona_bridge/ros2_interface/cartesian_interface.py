@@ -29,9 +29,9 @@ class CartesianInterface:
         self.ee_link = 'gripper_base'
         
         # Workspace bounds (meters)
-        self.workspace_x_range = (-0.5, 0.5)
-        self.workspace_y_range = (-0.5, 0.5)
-        self.workspace_z_range = (0.0, 0.8)
+        self.workspace_x_range = (-0.63, 0.63)
+        self.workspace_y_range = (-0.63, 0.63)
+        self.workspace_z_range = (0.0, 0.63)
         
         # TF2 for pose lookups
         self.tf_buffer = Buffer()

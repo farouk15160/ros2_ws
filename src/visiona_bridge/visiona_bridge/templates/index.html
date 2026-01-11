@@ -951,9 +951,12 @@
       });
 
       JOINT_NAMES.forEach((name, i) => {
-        slidersContainer.innerHTML += `<div class="control-group"><label for="j${i}">${name} (J${i}): <span id="j${i}-value" class="value-display">90</span>°</label><input type="range" id="j${i}" value="90"></div>`;
+        // J0 (base) has different limits: -360 to 360
+        const defaultMin = (i === 0) ? -360 : 0;
+        const defaultMax = (i === 0) ? 360 : 180;
+        slidersContainer.innerHTML += `<div class="control-group"><label for="j${i}">${name} (J${i}): <span id="j${i}-value" class="value-display">90</span>°</label><input type="range" id="j${i}" value="90" min="${defaultMin}" max="${defaultMax}"></div>`;
         statusContainer.innerHTML += `<div>${name}: <span id="s${i}" class="status-value">0.00</span></div>`;
-        limitsContainer.innerHTML += `<label for="min-j${i}">J${i}:</label><input type="number" id="min-j${i}" value="0"><input type="number" id="max-j${i}" value="180">`;
+        limitsContainer.innerHTML += `<label for="min-j${i}">J${i}:</label><input type="number" id="min-j${i}" value="${defaultMin}"><input type="number" id="max-j${i}" value="${defaultMax}">`;
       });
 
       JOINT_NAMES.forEach((_, i) => {
