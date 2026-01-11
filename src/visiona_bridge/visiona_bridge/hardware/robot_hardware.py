@@ -42,7 +42,7 @@ class RobotHardware:
         
         # State variables
         self.state_lock = threading.Lock()
-        self.current_joint_angles_deg = [90.0] * 6
+        self.current_joint_angles_deg = [90.0, 90.0, 90.0, 90.0, 90.0, 0.0]
         self.main_current = 0.0
         self.gripper_current = 0.0
         self.emergency_stop_active = False
@@ -52,8 +52,8 @@ class RobotHardware:
         self.last_terminal_print_time = time.time()
         
         # Configuration
-        self.servos_min = [15.0] * 6
-        self.servos_max = [345.0] * 6
+        self.servos_min = [0.0] * 6
+        self.servos_max = [360.0 , 180.0 , 180.0 , 180.0 , 180.0 , 180.0 ]
         self.collision_threshold = 5.0
         self.collision_deviation_threshold = 1.0
         self.fan_speed = 18
@@ -62,8 +62,8 @@ class RobotHardware:
         # Simulation mode
         self.simulation_mode = False
         self.simulation_thread: Optional[threading.Thread] = None
-        self.sim_current_joint_angles_deg = [90.0] * 6
-        self.sim_target_joint_angles_deg = [90.0] * 6
+        self.sim_current_joint_angles_deg = [90.0, 90.0, 90.0, 90.0, 90.0, 0.0]
+        self.sim_target_joint_angles_deg = [90.0, 90.0, 90.0, 90.0, 90.0, 0.0]
         self.sim_last_update_time = self.get_clock().now()
     
     def process_status_packet(self, data: bytes):
@@ -246,7 +246,7 @@ class RobotHardware:
             elif cmd_char == 'G':
                 self.sim_target_joint_angles_deg = angles_deg[:]
             elif cmd_char == 'H':
-                self.sim_target_joint_angles_deg = [90.0] * 6
+                self.sim_target_joint_angles_deg = [90.0, 90.0, 90.0, 90.0, 90.0, 0.0]
             elif cmd_char == 'K':
                 self.logger.warn("Sim: Motors Killed (Relaxed).")
             elif cmd_char == 'E':

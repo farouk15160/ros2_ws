@@ -45,13 +45,17 @@ class SimpleIKSolver(Node):
         
         # Robot DH parameters (extracted from URDF visiona.urdf.xacro)
         # Format: [a, alpha, d, theta_offset]
+        #   Index 0 (a): Link length
+        #   Index 1 (alpha): Link twist
+        #   Index 2 (d): Link offset
+        #   Index 3 (theta_offset): Joint angle offset
         # Based on URDF joint origins and orientations
         # URDF shows: base(z=-0.001), shoulder(z=0.14), elbow(z=0.185), wrist(y=-0.119)
         self.dh_params = [
             [0.0,     np.pi/2,   0.14,   0.0],       # Joint 1
-            [0.185,   0.0,       0.0,    0.0],       # Joint 2: Option 3 worked!
+            [0.185,   0.0,       0.0,    0.0],       # Joint 2
             [0.119,   0.0,       0.0,    0.0],       # Joint 3
-            [0.12,    0.0,       0.0,    0.0],       # Joint 4: Increased to reach gripper tip
+            [0.22,    0.0,       -0.005,    0.0],       # Joint 4: Increased to reach gripper tip
         ]
         
         # No separate gripper offset needed (included in Joint 4)
@@ -146,13 +150,13 @@ class SimpleIKSolver(Node):
             marker.pose.position.y = float(current_xyz[1])
             marker.pose.position.z = float(current_xyz[2])
             marker.pose.orientation.w = 1.0
-            marker.scale.x = 0.015  # 1.5cm (smaller than target)
-            marker.scale.y = 0.015
-            marker.scale.z = 0.015
+            marker.scale.x = 0.025  # 1.5cm (smaller than target)
+            marker.scale.y = 0.025
+            marker.scale.z = 0.025
             marker.color.r = 0.0
             marker.color.g = 0.5
             marker.color.b = 1.0  # Blue
-            marker.color.a = 0.8  # Semi-transparent
+            marker.color.a = 1.0  # Semi-transparent
             self.current_ee_marker_pub.publish(marker)
     
     def dh_transform(self, a, alpha, d, theta):
@@ -209,9 +213,167 @@ class SimpleIKSolver(Node):
             joints_pert[i] += epsilon
             pos_pert = self.forward_kinematics(joints_pert)
             J[:, i] = (pos_pert - pos0) / epsilon
-        
         return J
     
+    def check_workspace_limits(self, xyz):
+        """
+        Check if target position is within safe workspace bounds.
+        
+        Args:
+            xyz: Target position [x, y, z]
+        
+        Returns:
+            bool: True if within limits, False otherwise
+        """
+        x, y, z = xyz
+        
+        # Define safe workspace bounds based on robot geometry
+        # These limits ensure the target is physically reachable
+        x_min, x_max = 0.08, 0.50   # 8cm to 50cm forward reach
+        y_min, y_max = -0.35, 0.35  # ±35cm lateral reach
+        z_min, z_max = 0.05, 0.50   # 5cm to 50cm height above base
+        
+        # CRITICAL: Minimum distance from base origin to prevent self-collision
+        dist_from_base = np.sqrt(x**2 + y**2 + z**2)
+        min_safe_dist = 0.12  # 12cm minimum from base center
+        
+        if dist_from_base < min_safe_dist:
+            self.get_logger().warn(
+                f'⚠️ Target too close to base: {dist_from_base*100:.1f}cm '
+                f'(minimum: {min_safe_dist*100:.0f}cm)'
+            )
+            return False
+        
+        if x < x_min or x > x_max:
+            self.get_logger().warn(f'⚠️ X coordinate {x:.3f}m out of bounds [{x_min}, {x_max}]')
+            return False
+        
+        if y < y_min or y > y_max:
+            self.get_logger().warn(f'⚠️ Y coordinate {y:.3f}m out of bounds [{y_min}, {y_max}]')
+            return False
+        
+        if z < z_min or z > z_max:
+            self.get_logger().warn(f'⚠️ Z coordinate {z:.3f}m out of bounds [{z_min}, {z_max}]')
+            return False
+        
+        return True
+    
+    def check_joint_limits(self, joints):
+        """
+        Check if all joint angles are within safe mechanical limits.
+        
+        Args:
+            joints: Array of joint angles (radians)
+        
+        Returns:
+            bool: True if all joints within limits, False otherwise
+        """
+        # Joint limits: J0 = 0-360° (2π), J1-J3 = 0-180° (π)
+        joint_limits = [
+            (0.0, 2 * np.pi),   # J0: 0-360°
+            (0.0, np.pi),       # J1: 0-180°
+            (0.0, np.pi),       # J2: 0-180°
+            (0.0, np.pi),       # J3: 0-180°
+        ]
+        
+        for i in range(4):
+            joint_min, joint_max = joint_limits[i]
+            if joints[i] < joint_min or joints[i] > joint_max:
+                self.get_logger().warn(
+                    f'⚠️ Joint {i} angle {np.rad2deg(joints[i]):.1f}° '
+                    f'out of range [{np.rad2deg(joint_min):.0f}°, {np.rad2deg(joint_max):.0f}°]'
+                )
+                return False
+        
+        return True
+    
+    def check_simple_collision(self, joints):
+        """
+        Perform geometric self-collision checks based on robot configuration.
+        
+        Uses forward kinematics to compute actual link positions and checks
+        for minimum safe distances between non-adjacent links.
+        
+        Args:
+            joints: Array of joint angles
+        
+        Returns:
+            bool: True if no collision detected, False otherwise
+        """
+        j1, j2, j3, j4 = joints[:4]
+        
+        # Get link positions using forward kinematics
+        link_positions = self.compute_link_positions(joints)
+        
+        # Check 1: End-effector too close to base (self-collision)
+        # The gripper should never be within 5cm of the base origin
+        base_pos = np.array([0.0, 0.0, 0.0])
+        ee_pos = link_positions[-1]
+        ee_to_base_dist = np.linalg.norm(ee_pos - base_pos)
+        
+        if ee_to_base_dist < 0.08:  # 8cm minimum distance from base center
+            self.get_logger().warn(
+                f'⚠️ End-effector too close to base: {ee_to_base_dist*100:.1f}cm '
+                f'(minimum: 8cm)'
+            )
+            return False
+        
+        # Check 2: Wrist link too close to shoulder link
+        # link_positions[1] = shoulder, link_positions[3] = wrist
+        if len(link_positions) >= 4:
+            shoulder_pos = link_positions[1]
+            wrist_pos = link_positions[3]
+            wrist_to_shoulder_dist = np.linalg.norm(wrist_pos - shoulder_pos)
+            
+            if wrist_to_shoulder_dist < 0.05:  # 5cm minimum
+                self.get_logger().warn(
+                    f'⚠️ Wrist too close to shoulder: {wrist_to_shoulder_dist*100:.1f}cm '
+                    f'(minimum: 5cm)'
+                )
+                return False
+        
+        # Check 3: Arm folding back on itself (elbow angle check)
+        # When j2 and j3 create an acute angle that folds the arm back
+        elbow_angle = j2 + j3  # Combined angle
+        if elbow_angle > 5.5:  # > 315° combined = folding back
+            self.get_logger().warn(
+                f'⚠️ Arm folding back: combined elbow angle = {np.rad2deg(elbow_angle):.1f}° '
+                f'(maximum: 315°)'
+            )
+            return False
+        
+        # Check 4: End-effector below base plane (hitting the table)
+        if ee_pos[2] < -0.02:  # 2cm below base
+            self.get_logger().warn(
+                f'⚠️ End-effector below base: z={ee_pos[2]*100:.1f}cm '
+                f'(minimum: -2cm)'
+            )
+            return False
+        
+        return True
+    
+    def compute_link_positions(self, joints):
+        """
+        Compute the position of each link origin using forward kinematics.
+        
+        Returns:
+            list: List of [x, y, z] positions for each link
+        """
+        positions = []
+        T = np.eye(4)
+        
+        # Base position
+        positions.append(T[:3, 3].copy())
+        
+        # Compute each link position
+        for i in range(4):
+            a, alpha, d, offset = self.dh_params[i]
+            theta = joints[i] + offset
+            T = T @ self.dh_transform(a, alpha, d, theta)
+            positions.append(T[:3, 3].copy())
+        
+        return positions
+
     def compute_ik(self, target_xyz, initial_joints):
         """
         Compute inverse kinematics using Jacobian pseudoinverse.
@@ -223,6 +385,14 @@ class SimpleIKSolver(Node):
         Returns:
             joints: Solution joint angles (or None if failed)
         """
+        # SAFETY CHECK 1: Validate workspace limits BEFORE starting IK
+        if not self.check_workspace_limits(target_xyz):
+            self.get_logger().error(
+                f'❌ Target position {target_xyz} outside safe workspace. '
+                f'Command rejected.'
+            )
+            return None
+        
         joints = initial_joints.copy()
         alpha = 0.5  # Step size factor
         
@@ -237,6 +407,21 @@ class SimpleIKSolver(Node):
             # Check convergence
             if error_norm < self.tolerance:
                 self.get_logger().debug(f'IK converged in {iteration} iterations')
+                
+                # SAFETY CHECK 2: Validate solution before accepting
+                if not self.check_joint_limits(joints):
+                    self.get_logger().error(
+                        f'❌ IK solution violates joint limits. Command rejected.'
+                    )
+                    return None
+                
+                if not self.check_simple_collision(joints):
+                    self.get_logger().error(
+                        f'❌ IK solution causes collision. Command rejected.'
+                    )
+                    return None
+                
+                # All checks passed!
                 return joints
             
             # Compute Jacobian
@@ -249,8 +434,8 @@ class SimpleIKSolver(Node):
             delta_joints = alpha * (J_pinv @ error)
             joints[:4] += delta_joints
             
-            # Joint limits (safety)
-            joints = np.clip(joints, -np.pi, np.pi)
+            # Clamp joints to valid range during iteration
+            joints[:4] = np.clip(joints[:4], 0.0, np.pi)
         
         self.get_logger().warn(f'IK did not converge after {self.max_iter} iterations')
         return None
@@ -342,6 +527,37 @@ class SimpleIKSolver(Node):
         
         self.get_logger().info(f'🎯 Cartesian command: x={target_xyz[0]:.3f}, '
                               f'y={target_xyz[1]:.3f}, z={target_xyz[2]:.3f}')
+        
+        # =====================================================================
+        # PRE-VALIDATION: Check final target BEFORE generating trajectory
+        # =====================================================================
+        
+        # Check 1: Is the target within workspace limits?
+        if not self.check_workspace_limits(target_xyz):
+            self.get_logger().error(
+                f'❌ REJECTED: Target position outside safe workspace. '
+                f'Command ignored.'
+            )
+            return
+        
+        # Check 2: Can we compute a valid IK solution for the final target?
+        test_solution = self.compute_ik(target_xyz, self.current_joints)
+        if test_solution is None:
+            self.get_logger().error(
+                f'❌ REJECTED: Cannot find valid IK solution for target. '
+                f'Command ignored.'
+            )
+            return
+        
+        # Check 3: Does the IK solution cause collision?
+        if not self.check_simple_collision(test_solution):
+            self.get_logger().error(
+                f'❌ REJECTED: Target causes self-collision. '
+                f'Command ignored.'
+            )
+            return
+        
+        self.get_logger().info('✅ Target validated - proceeding with trajectory')
         
         # Publish marker for RViz visualization
         self.publish_target_marker(target_xyz)

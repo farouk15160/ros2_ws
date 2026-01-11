@@ -113,15 +113,28 @@ class RobotArmBridge(Node):
         self.sequence_mgr = SequenceManager(
             logger=self.get_logger(),
             get_clock=self.get_clock,
-            send_command=self._send_command,
+            send_command=self._validated_send_command,  # Use validated version
             get_current_state=self._get_state
         )
         
         self.position_mgr = PositionManager(
             logger=self.get_logger(),
-            send_command=self._send_command,
+            send_command=self._validated_send_command,  # Use validated version
             get_current_state=self._get_state
         )
+    
+    def _validated_send_command(self, cmd_id: int, angles_deg: list, speed: float, gripper_cur: float) -> bool:
+        """Send command with validation for movement commands."""
+        # Only validate movement commands (M)
+        if cmd_id == ord('M') and len(angles_deg) == 6:
+            is_safe, reason = self._validate_joint_command(angles_deg)
+            if not is_safe:
+                self.get_logger().warn(f'⚠️ Command rejected: {reason}')
+                if self.socketio:
+                    emit_log_message(self.socketio, 'warn', f'Command rejected: {reason}')
+                return False
+        
+        return self._send_command(cmd_id, angles_deg, speed, gripper_cur)
     
     def _init_ros2_layer(self):
         """Initialize ROS2 publishers, subscribers, services."""
@@ -219,11 +232,101 @@ class RobotArmBridge(Node):
         self.emit_full_status()
     
     def send_joint_command(self, angles_deg: list):
-        if len(angles_deg) == 6:
-            self._send_command(ord('M'), angles_deg, self.hardware.speed_factor, 0.0)
+        """Send joint command with safety validation."""
+        if len(angles_deg) != 6:
+            return
+        
+        # Validate command before sending
+        is_safe, reason = self._validate_joint_command(angles_deg)
+        
+        if not is_safe:
+            self.get_logger().warn(f'⚠️ Command rejected: {reason}')
+            if self.socketio:
+                emit_log_message(self.socketio, 'warn', f'Command rejected: {reason}')
+            return  # Don't send unsafe command
+        
+        self._send_command(ord('M'), angles_deg, self.hardware.speed_factor, 0.0)
+    
+    def _validate_joint_command(self, angles_deg: list) -> tuple:
+        """
+        Validate joint command using forward kinematics.
+        
+        Returns:
+            (is_safe: bool, reason: str)
+        """
+        import numpy as np
+        
+        # Convert degrees to radians
+        angles_rad = [a * math.pi / 180.0 for a in angles_deg[:4]]
+        
+        # DH parameters (same as IK solver)
+        dh_params = [
+            [0.0,     np.pi/2,   0.14,   0.0],       # Joint 1
+            [0.185,   0.0,       0.0,    0.0],       # Joint 2
+            [0.119,   0.0,       0.0,    0.0],       # Joint 3
+            [0.22,    0.0,       -0.005, 0.0],       # Joint 4
+        ]
+        
+        # Forward kinematics to get end-effector position
+        def dh_transform(a, alpha, d, theta):
+            ct, st = np.cos(theta), np.sin(theta)
+            ca, sa = np.cos(alpha), np.sin(alpha)
+            return np.array([
+                [ct, -st*ca,  st*sa, a*ct],
+                [st,  ct*ca, -ct*sa, a*st],
+                [0,   sa,     ca,    d   ],
+                [0,   0,      0,     1   ]
+            ])
+        
+        T = np.eye(4)
+        for i in range(4):
+            a, alpha, d, offset = dh_params[i]
+            theta = angles_rad[i] + offset
+            T = T @ dh_transform(a, alpha, d, theta)
+        
+        ee_pos = T[:3, 3]
+        x, y, z = ee_pos
+        
+        # Check 1: Joint limits
+        # J0 (base): 0-360°, J1-J3: 0-180°
+        joint_limits = [(0, 360), (0, 180), (0, 180), (0, 180)]
+        for i, angle in enumerate(angles_deg[:4]):
+            min_lim, max_lim = joint_limits[i]
+            if angle < min_lim or angle > max_lim:
+                return False, f'Joint {i} angle {angle:.1f}° out of range [{min_lim}°, {max_lim}°]'
+        
+        # Check 2: Workspace limits
+        x_min, x_max = 0.08, 0.50
+        y_min, y_max = -0.35, 0.35
+        z_min, z_max = 0.05, 0.50
+        
+        if x < x_min or x > x_max:
+            return False, f'X={x:.3f}m out of bounds [{x_min}, {x_max}]'
+        if y < y_min or y > y_max:
+            return False, f'Y={y:.3f}m out of bounds [{y_min}, {y_max}]'
+        if z < z_min or z > z_max:
+            return False, f'Z={z:.3f}m out of bounds [{z_min}, {z_max}]'
+        
+        # Check 3: Minimum distance from base
+        dist_from_base = np.sqrt(x**2 + y**2 + z**2)
+        min_safe_dist = 0.12  # 12cm
+        if dist_from_base < min_safe_dist:
+            return False, f'Too close to base: {dist_from_base*100:.1f}cm (min: {min_safe_dist*100:.0f}cm)'
+        
+        # Check 4: End-effector below base (table collision)
+        if z < 0:
+            return False, f'End-effector below base: z={z*100:.1f}cm'
+        
+        # Check 5: Arm folding back (combined elbow angle)
+        j2, j3 = angles_rad[1], angles_rad[2]
+        elbow_angle = j2 + j3
+        if elbow_angle > 5.5:  # > 315°
+            return False, f'Arm folding back: elbow angle {np.rad2deg(elbow_angle):.0f}°'
+        
+        return True, 'OK'
     
     def send_home_command(self):
-        self._send_command(ord('H'), [90.0]*6, 0.0, 0.0)
+        self._send_command(ord('H'), [90.0, 90.0, 90.0, 90.0, 90.0, 0.0], 0.0, 0.0)
     
     def send_gripper_command(self, angle: float, current: float):
         state = self._get_state()
