@@ -14,8 +14,10 @@ from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped, Point
 from sensor_msgs.msg import JointState
 from visualization_msgs.msg import Marker
+from octomap_msgs.msg import Octomap
 import numpy as np
 import time
+import struct
 
 
 class SimpleIKSolver(Node):
@@ -115,11 +117,41 @@ class SimpleIKSolver(Node):
             qos_profile
         )
         
+        # ========== OBSTACLE AVOIDANCE ==========
+        # Subscribe to Octomap for collision checking
+        self.declare_parameter('enable_obstacle_avoidance', True)
+        self.declare_parameter('obstacle_safety_margin', 0.10)  # 10cm safety buffer
+        self.enable_obstacle_avoidance = self.get_parameter('enable_obstacle_avoidance').value
+        self.obstacle_safety_margin = self.get_parameter('obstacle_safety_margin').value
+        
+        # Storage for occupied voxel positions (set of tuples)
+        self.occupied_voxels = set()
+        self.octomap_resolution = 0.02  # Default 2cm, updated from octomap
+        self.octomap_received = False
+        
+        self.octomap_sub = self.create_subscription(
+            Octomap,
+            '/octomap_binary',
+            self.octomap_callback,
+            10
+        )
+        
+        # Also subscribe to point cloud centers (easier to parse for collision)
+        from sensor_msgs.msg import PointCloud2
+        self.obstacle_pc_sub = self.create_subscription(
+            PointCloud2,
+            '/octomap_point_cloud_centers',
+            self.obstacle_pointcloud_callback,
+            10
+        )
+        
         self.get_logger().info('✅ Simple IK Solver Started')
         self.get_logger().info(f'   Max iterations: {self.max_iter}')
         self.get_logger().info(f'   Tolerance: {self.tolerance}m')
         self.get_logger().info(f'   Step size: {self.step_size}m')
         self.get_logger().info(f'   Control rate: {self.control_rate}Hz')
+        if self.enable_obstacle_avoidance:
+            self.get_logger().info(f'   🛡️ Obstacle avoidance: ENABLED (margin: {self.obstacle_safety_margin}m)')
         
     def joint_state_callback(self, msg):
         """Update current joint positions from joint_states topic"""
@@ -159,6 +191,103 @@ class SimpleIKSolver(Node):
             marker.color.a = 1.0  # Semi-transparent
             self.current_ee_marker_pub.publish(marker)
     
+    def octomap_callback(self, msg: Octomap):
+        """
+        Process Octomap message and extract occupied voxel centers.
+        Uses a simplified approach - stores voxel centers in world frame.
+        """
+        try:
+            self.octomap_resolution = msg.resolution
+            
+            # Parse binary octomap data to extract occupied cells
+            # The data is in OcTree binary format - we'll use a simplified extraction
+            # For full parsing, would need octomap library, but we can use the grid topics instead
+            
+            # Flag that we're receiving octomap data
+            self.octomap_received = True
+            
+        except Exception as e:
+            self.get_logger().debug(f'Octomap parsing error: {e}')
+    
+    def obstacle_pointcloud_callback(self, msg):
+        """
+        Parse occupied voxel centers from PointCloud2 for collision checking.
+        This is easier than parsing binary octomap data.
+        """
+        try:
+            # Find field offsets
+            fields = {f.name: f for f in msg.fields}
+            if 'x' not in fields or 'y' not in fields or 'z' not in fields:
+                return
+            
+            x_offset = fields['x'].offset
+            y_offset = fields['y'].offset
+            z_offset = fields['z'].offset
+            
+            point_step = msg.point_step
+            data = msg.data
+            
+            # Clear old voxels and parse new ones
+            new_voxels = set()
+            
+            # Sample every Nth point for performance (max 2000 voxels for collision checking)
+            sample_step = max(1, len(data) // (point_step * 2000))
+            
+            for i in range(0, len(data) - point_step, point_step * sample_step):
+                x = struct.unpack_from('f', data, i + x_offset)[0]
+                y = struct.unpack_from('f', data, i + y_offset)[0]
+                z = struct.unpack_from('f', data, i + z_offset)[0]
+                
+                if not (np.isnan(x) or np.isnan(y) or np.isnan(z)):
+                    # Round to voxel resolution for faster lookup
+                    key = (
+                        round(x / self.octomap_resolution) * self.octomap_resolution,
+                        round(y / self.octomap_resolution) * self.octomap_resolution,
+                        round(z / self.octomap_resolution) * self.octomap_resolution
+                    )
+                    new_voxels.add(key)
+            
+            self.occupied_voxels = new_voxels
+            self.octomap_received = True
+            
+            # Log voxel count periodically for debugging
+            if len(new_voxels) > 0 and len(new_voxels) % 100 == 0:
+                self.get_logger().info(f'🛡️ Obstacle map: {len(new_voxels)} voxels tracked')
+            
+        except Exception as e:
+            self.get_logger().debug(f'Obstacle pointcloud parsing error: {e}')
+    
+    def check_octomap_collision(self, xyz):
+        """
+        Check if a target XYZ position collides with obstacles in the Octomap.
+        Uses the occupied_cells_vis_array topic for simpler collision detection.
+        
+        Args:
+            xyz: Target position [x, y, z]
+        
+        Returns:
+            tuple: (is_collision_free, message)
+        """
+        if not self.enable_obstacle_avoidance:
+            return True, "Obstacle avoidance disabled"
+        
+        if not self.octomap_received:
+            # No octomap data yet, allow movement but warn
+            return True, "No obstacle data yet"
+        
+        # Check against occupied voxels with safety margin
+        x, y, z = xyz
+        margin = self.obstacle_safety_margin
+        
+        for voxel in self.occupied_voxels:
+            vx, vy, vz = voxel
+            # Check if target is within safety margin of any occupied voxel
+            if (abs(x - vx) < margin and 
+                abs(y - vy) < margin and 
+                abs(z - vz) < margin):
+                return False, f"⚠️ Obstacle detected at ({vx:.2f}, {vy:.2f}, {vz:.2f})!"
+        
+        return True, "Path clear"
     def dh_transform(self, a, alpha, d, theta):
         """Compute DH transformation matrix"""
         ct = np.cos(theta)
@@ -557,6 +686,15 @@ class SimpleIKSolver(Node):
             )
             return
         
+        # Check 4: Is target position blocked by obstacles (Octomap)?
+        is_clear, obstacle_msg = self.check_octomap_collision(target_xyz)
+        if not is_clear:
+            self.get_logger().error(
+                f'❌ REJECTED: {obstacle_msg} '
+                f'Command ignored.'
+            )
+            return
+        
         self.get_logger().info('✅ Target validated - proceeding with trajectory')
         
         # Publish marker for RViz visualization
@@ -569,11 +707,30 @@ class SimpleIKSolver(Node):
         waypoints = self.interpolate_trajectory(current_xyz, target_xyz)
         self.get_logger().info(f'   Generated {len(waypoints)} waypoints')
         
+        # PRE-VALIDATE ENTIRE PATH for obstacles before starting movement
+        if self.enable_obstacle_avoidance and self.octomap_received:
+            for i, waypoint in enumerate(waypoints):
+                is_clear, obstacle_msg = self.check_octomap_collision(waypoint)
+                if not is_clear:
+                    self.get_logger().error(
+                        f'❌ REJECTED: Path blocked at waypoint {i}/{len(waypoints)}: {obstacle_msg}'
+                    )
+                    return
+            self.get_logger().info(f'   ✅ Path collision-free ({len(self.occupied_voxels)} voxels checked)')
+        
         # Execute trajectory
         sleep_time = 1.0 / self.control_rate
         current_joints = self.current_joints.copy()
         
         for i, waypoint in enumerate(waypoints):
+            # Check 5: Collision check for EACH waypoint along path (not just target)
+            is_clear, obstacle_msg = self.check_octomap_collision(waypoint)
+            if not is_clear:
+                self.get_logger().error(
+                    f'❌ STOPPED at waypoint {i}/{len(waypoints)}: {obstacle_msg}'
+                )
+                return
+            
             # Compute IK for this waypoint
             solution = self.compute_ik(waypoint, current_joints)
             

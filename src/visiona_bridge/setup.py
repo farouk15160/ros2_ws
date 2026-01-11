@@ -61,6 +61,8 @@ setup(
             # Visual Servoing
             'visual_servo_node = visiona_bridge.visual_servoing.visual_servo_node:main',
             'simple_ik_solver = visiona_bridge.simple_ik_solver:main',
+            # Mapping
+            'colored_map = visiona_bridge.colored_map_node:main',
         ],
     },
 )

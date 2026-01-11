@@ -307,6 +307,22 @@ def generate_launch_description():
     # NOTE: rtabmap_viz removed - RViz is sufficient for visualization
     # Use /cloud_map topic in RViz with Color Transformer: RGB8 for colored point cloud
     
+    # ========== COLORED POINT CLOUD ACCUMULATOR ==========
+    # Accumulates RGB-D camera data into persistent colored 3D map
+    colored_map_node = Node(
+        package='visiona_bridge',
+        executable='colored_map',
+        name='colored_map_accumulator',
+        output='screen',
+        condition=LaunchConfigurationEquals('camera', 'true'),
+        parameters=[{
+            'voxel_size': 0.02,  # 2cm resolution
+            'max_points': 500000,
+            'world_frame': 'world',
+            'publish_rate': 2.0,
+        }]
+    )
+    
     # ==============================================================================
     # Launch Description - Combine all nodes
     # ==============================================================================
@@ -346,6 +362,7 @@ def generate_launch_description():
         # 3D Mapping (camera:=true)
         octomap_server,      # Voxel-based occupancy grid
         rtabmap_node,        # Colored RGB point cloud SLAM
+        colored_map_node,    # Photo-realistic colored point cloud accumulator
         
         # LLM Control (conditional)
         llm_control_launch,  # if llm:=true
