@@ -135,6 +135,33 @@ def generate_launch_description():
         condition=IfCondition(camera)
     )
     
+    # Static TF: map → world (RTAB-Map uses 'map' frame, robot uses 'world')
+    map_to_world_tf = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='map_to_world_tf',
+        arguments=['0', '0', '0', '0', '0', '0', 'world', 'map'],
+        condition=IfCondition(camera)
+    )
+    
+    # Static TF: odom → base_link (for odometry, identity when stationary arm)
+    odom_to_base_tf = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='odom_to_base_tf',
+        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'],
+        condition=IfCondition(camera)
+    )
+    
+    # Static TF: odom → base_link (required by RTAB-Map)
+    base_link_tf = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='base_link_tf',
+        arguments=['0', '0', '0', '0', '0', '0', 'odom', 'base_link'],
+        condition=IfCondition(camera)
+    )
+    
     # Web GUI / Bridge Node
     web_node = Node(
         package='visiona_bridge',
@@ -229,6 +256,57 @@ def generate_launch_description():
         ]
     )
     
+    # ========== RTAB-MAP for COLORED 3D MAPPING ==========
+    # Creates dense RGB point cloud maps with colors for realistic visualization
+    # and VLA/autonomous navigation with obstacle avoidance
+    rtabmap_node = Node(
+        package='rtabmap_slam',
+        executable='rtabmap',
+        name='rtabmap',
+        output='screen',
+        condition=LaunchConfigurationEquals('camera', 'true'),
+        parameters=[{
+            # Database - save map to file for persistence
+            'database_path': '~/.ros/rtabmap.db',  # Save map here
+            'delete_db_on_start': False,  # Keep previous map!
+            
+            # Frame configuration
+            'frame_id': 'base_link',
+            'odom_frame_id': 'odom',
+            'map_frame_id': 'map',
+            'subscribe_depth': True,
+            'subscribe_rgb': True,
+            'approx_sync': True,  # Sync RGB and Depth
+            'queue_size': 10,
+            
+            # Visual odometry settings
+            'Vis/MinInliers': '15',
+            'Vis/InlierDistance': '0.1',
+            
+            # Map settings for colored point clouds
+            'Grid/FromDepth': 'true',  # Build occupancy grid from depth
+            'Grid/RangeMax': '2.0',    # Max sensing range
+            'Grid/RangeMin': '0.1',    # Min sensing range
+            
+            # Memory management
+            'Mem/IncrementalMemory': 'true',
+            'Mem/InitWMWithAllNodes': 'false',
+            
+            # Point cloud generation with colors
+            'Rtabmap/CreateIntermediateNodes': 'true',
+            'RGBD/CreateOccupancyGrid': 'true',
+        }],
+        remappings=[
+            # Use actual camera publisher topics (check with: ros2 topic list | grep ascamera)
+            ('rgb/image', '/ascamera_hp60c/camera_publisher/rgb0/image'),
+            ('rgb/camera_info', '/ascamera_hp60c/camera_publisher/rgb0/camera_info'),
+            ('depth/image', '/ascamera_hp60c/camera_publisher/depth0/image_raw'),
+        ]
+    )
+    
+    # NOTE: rtabmap_viz removed - RViz is sufficient for visualization
+    # Use /cloud_map topic in RViz with Color Transformer: RGB8 for colored point cloud
+    
     # ==============================================================================
     # Launch Description - Combine all nodes
     # ==============================================================================
@@ -249,9 +327,12 @@ def generate_launch_description():
         delay_joint_state_broadcaster,
         delay_joint_trajectory_controller,
         
-        # Camera
+        # Camera and TF tree
         camera_launch,
         camera_tf_publisher,
+        map_to_world_tf,     # Connect RTAB-Map 'map' to 'world'
+        odom_to_base_tf,     # Connect 'map' to 'odom'
+        base_link_tf,        # Connect 'odom' to 'base_link'
         
         # Visualization (conditional)
         node_rviz,     # if viz:=rviz
@@ -262,8 +343,9 @@ def generate_launch_description():
         # GUI
         web_node,
         
-        # 3D Mapping
-        octomap_server,
+        # 3D Mapping (camera:=true)
+        octomap_server,      # Voxel-based occupancy grid
+        rtabmap_node,        # Colored RGB point cloud SLAM
         
         # LLM Control (conditional)
         llm_control_launch,  # if llm:=true
