@@ -32,7 +32,7 @@ class SimpleIKSolver(Node):
         super().__init__('simple_ik_solver')
         
         # Parameters
-        self.declare_parameter('max_iterations', 100)
+        self.declare_parameter('max_iterations', 200)
         self.declare_parameter('tolerance', 0.001)  # 1mm
         self.declare_parameter('step_size', 0.01)  # 1cm per waypoint
         self.declare_parameter('control_rate', 20.0)  # Hz
@@ -57,7 +57,7 @@ class SimpleIKSolver(Node):
             [0.0,     np.pi/2,   0.14,   0.0],       # Joint 1
             [0.185,   0.0,       0.0,    0.0],       # Joint 2
             [0.119,   0.0,       0.0,    0.0],       # Joint 3
-            [0.22,    0.0,       -0.005,    0.0],       # Joint 4: Increased to reach gripper tip
+            [0.25,    0.0,       -0.005,    0.0],       # Joint 4: Increased to reach gripper tip
         ]
         
         # No separate gripper offset needed (included in Joint 4)
@@ -358,9 +358,10 @@ class SimpleIKSolver(Node):
         
         # Define safe workspace bounds based on robot geometry
         # These limits ensure the target is physically reachable
-        x_min, x_max = -0.63, 0.63   # ±63cm reach
-        y_min, y_max = -0.63, 0.63   # ±63cm lateral reach
-        z_min, z_max = 0.0, 0.63     # 0 to 63cm height above base
+        max_reach = 0.69
+        x_min, x_max = -max_reach, max_reach   # ±69cm reach
+        y_min, y_max = -max_reach, max_reach   # ±69cm lateral reach
+        z_min, z_max = 0.0, max_reach     # 0 to 69cm height above base
         
         # CRITICAL: Minimum distance from base origin to prevent self-collision
         dist_from_base = np.sqrt(x**2 + y**2 + z**2)
@@ -440,10 +441,10 @@ class SimpleIKSolver(Node):
         ee_pos = link_positions[-1]
         ee_to_base_dist = np.linalg.norm(ee_pos - base_pos)
         
-        if ee_to_base_dist < 0.08:  # 8cm minimum distance from base center
+        if ee_to_base_dist < 0.05:  # 5cm minimum distance from base center
             self.get_logger().warn(
                 f'⚠️ End-effector too close to base: {ee_to_base_dist*100:.1f}cm '
-                f'(minimum: 8cm)'
+                f'(minimum: 5cm)'
             )
             return False
         
