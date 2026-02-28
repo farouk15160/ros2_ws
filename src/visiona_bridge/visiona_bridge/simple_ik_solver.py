@@ -2,8 +2,9 @@
 """
 Simple Inverse Kinematics Solver for Visiona Robot
 
-Provides fast, direct XYZ to joint angle conversion without MoveIt overhead.
-Uses numerical IK with Jacobian pseudoinverse for smooth Cartesian control.
+Provides fast, direct XYZ to joint conversion using Damped Least Squares (DLS).
+Interpolates paths in Joint Space using a Minimum Jerk trajectory for smooth motion.
+Collision checking verifies all arm links against the Octomap point cloud.
 
 Author: Robot Control System
 License: MIT
@@ -16,151 +17,76 @@ from sensor_msgs.msg import JointState
 from visualization_msgs.msg import Marker
 from octomap_msgs.msg import Octomap
 import numpy as np
-import time
 import struct
 
-
 class SimpleIKSolver(Node):
-    """
-    Simple IK solver using numerical methods (Jacobian pseudoinverse).
-    
-    Subscribes to Cartesian commands and publishes joint targets.
-    Includes trajectory interpolation for smooth motion.
-    """
-    
     def __init__(self):
         super().__init__('simple_ik_solver')
         
         # Parameters
         self.declare_parameter('max_iterations', 200)
         self.declare_parameter('tolerance', 0.001)  # 1mm
-        self.declare_parameter('step_size', 0.01)  # 1cm per waypoint
-        self.declare_parameter('control_rate', 20.0)  # Hz
-        self.declare_parameter('max_speed', 0.5)  # m/s
+        self.declare_parameter('control_rate', 50.0)  # Hz (increased for smoothness)
+        self.declare_parameter('max_joint_speed', 1.0)  # rad/s max joint velocity
         
         self.max_iter = self.get_parameter('max_iterations').value
         self.tolerance = self.get_parameter('tolerance').value
-        self.step_size = self.get_parameter('step_size').value
         self.control_rate = self.get_parameter('control_rate').value
-        self.max_speed = self.get_parameter('max_speed').value
+        self.max_joint_speed = self.get_parameter('max_joint_speed').value
         
-        
-        # Robot DH parameters (extracted from URDF visiona.urdf.xacro)
-        # Format: [a, alpha, d, theta_offset]
-        #   Index 0 (a): Link length
-        #   Index 1 (alpha): Link twist
-        #   Index 2 (d): Link offset
-        #   Index 3 (theta_offset): Joint angle offset
-        # Based on URDF joint origins and orientations
-        # URDF shows: base(z=-0.001), shoulder(z=0.14), elbow(z=0.185), wrist(y=-0.119)
+        # Robot DH parameters [a, alpha, d, theta_offset]
         self.dh_params = [
             [0.0,     np.pi/2,   0.14,   0.0],       # Joint 1
             [0.185,   0.0,       0.0,    0.0],       # Joint 2
             [0.119,   0.0,       0.0,    0.0],       # Joint 3
-            [0.25,    0.0,       -0.005,    0.0],       # Joint 4: Increased to reach gripper tip
+            [0.25,    0.0,       -0.005, 0.0],       # Joint 4 (inkl Gripper)
         ]
         
-        # No separate gripper offset needed (included in Joint 4)
-        self.gripper_offset = 0.0
-        
-        # Current joint state
         self.current_joints = np.array([0.0, 1.57, 1.57, 1.57, 0.0, 0.26])
         self.joints_updated = False
         
-        # Publishers and Subscribers
-        self.joint_pub = self.create_publisher(
-            JointState,
-            '/joint_targets',
-            10
-        )
+        # Publishers
+        self.joint_pub = self.create_publisher(JointState, '/joint_targets', 10)
+        self.marker_pub = self.create_publisher(Marker, '/visiona/target_marker', 10)
+        self.current_ee_marker_pub = self.create_publisher(Marker, '/visiona/current_ee_marker', 10)
+        self.current_pose_pub = self.create_publisher(PoseStamped, '/visiona/current_pose', 10)
         
-        # Publisher for target marker (RViz visualization)
-        self.marker_pub = self.create_publisher(
-            Marker,
-            '/visiona/target_marker',
-            10
-        )
+        # Subscribers
+        self.cartesian_sub = self.create_subscription(PoseStamped, '/visiona/cartesian_command', self.cartesian_callback, 10)
         
-        # Publisher for current EE position marker (blue sphere)
-        self.current_ee_marker_pub = self.create_publisher(
-            Marker,
-            '/visiona/current_ee_marker',
-            10
-        )
-        
-        # Publisher for current EE pose (GUI display)
-        self.current_pose_pub = self.create_publisher(
-            PoseStamped,
-            '/visiona/current_pose',
-            10
-        )
-        
-        self.cartesian_sub = self.create_subscription(
-            PoseStamped,
-            '/visiona/cartesian_command',
-            self.cartesian_callback,
-            10
-        )
-        
-        # QoS profile for joint_states (match default sensor QoS)
         from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
-        qos_profile = QoSProfile(
-            reliability=ReliabilityPolicy.BEST_EFFORT,
-            history=HistoryPolicy.KEEP_LAST,
-            depth=10
-        )
+        qos_profile = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT, history=HistoryPolicy.KEEP_LAST, depth=10)
+        self.joint_state_sub = self.create_subscription(JointState, '/joint_states', self.joint_state_callback, qos_profile)
         
-        self.joint_state_sub = self.create_subscription(
-            JointState,
-            '/joint_states',
-            self.joint_state_callback,
-            qos_profile
-        )
-        
-        # ========== OBSTACLE AVOIDANCE ==========
-        # Subscribe to Octomap for collision checking
+        # Obstacle Avoidance
         self.declare_parameter('enable_obstacle_avoidance', True)
-        self.declare_parameter('obstacle_safety_margin', 0.10)  # 10cm safety buffer
+        self.declare_parameter('obstacle_safety_margin', 0.10)
         self.enable_obstacle_avoidance = self.get_parameter('enable_obstacle_avoidance').value
         self.obstacle_safety_margin = self.get_parameter('obstacle_safety_margin').value
         
-        # Storage for occupied voxel positions (set of tuples)
         self.occupied_voxels = set()
-        self.octomap_resolution = 0.02  # Default 2cm, updated from octomap
+        self.octomap_resolution = 0.02
         self.octomap_received = False
+        self.octomap_sub = self.create_subscription(Octomap, '/octomap_binary', self.octomap_callback, 10)
         
-        self.octomap_sub = self.create_subscription(
-            Octomap,
-            '/octomap_binary',
-            self.octomap_callback,
-            10
-        )
-        
-        # Also subscribe to point cloud centers (easier to parse for collision)
         from sensor_msgs.msg import PointCloud2
-        self.obstacle_pc_sub = self.create_subscription(
-            PointCloud2,
-            '/octomap_point_cloud_centers',
-            self.obstacle_pointcloud_callback,
-            10
-        )
+        self.obstacle_pc_sub = self.create_subscription(PointCloud2, '/octomap_point_cloud_centers', self.obstacle_pointcloud_callback, 10)
         
-        self.get_logger().info('✅ Simple IK Solver Started')
-        self.get_logger().info(f'   Max iterations: {self.max_iter}')
-        self.get_logger().info(f'   Tolerance: {self.tolerance}m')
-        self.get_logger().info(f'   Step size: {self.step_size}m')
-        self.get_logger().info(f'   Control rate: {self.control_rate}Hz')
-        if self.enable_obstacle_avoidance:
-            self.get_logger().info(f'   🛡️ Obstacle avoidance: ENABLED (margin: {self.obstacle_safety_margin}m)')
+        # Non-blocking Execution Timer
+        self.trajectory_points = []
+        self.trajectory_idx = 0
+        self.is_moving = False
+        self.control_timer = self.create_timer(1.0 / self.control_rate, self.control_timer_callback)
+        
+        self.get_logger().info('✅ Simple IK Solver Started (Smooth Joint-Space DLS Version)')
         
     def joint_state_callback(self, msg):
-        """Update current joint positions from joint_states topic"""
         if len(msg.position) >= 6:
             self.current_joints = np.array(msg.position[:6])
             self.joints_updated = True
             
-            # Publish current EE pose for GUI display
             current_xyz = self.forward_kinematics(self.current_joints)
+            
             pose_msg = PoseStamped()
             pose_msg.header.stamp = self.get_clock().now().to_msg()
             pose_msg.header.frame_id = 'world'
@@ -170,7 +96,6 @@ class SimpleIKSolver(Node):
             pose_msg.pose.orientation.w = 1.0
             self.current_pose_pub.publish(pose_msg)
             
-            # Publish current EE position marker (blue sphere) for RViz
             marker = Marker()
             marker.header.frame_id = 'world'
             marker.header.stamp = self.get_clock().now().to_msg()
@@ -182,432 +107,170 @@ class SimpleIKSolver(Node):
             marker.pose.position.y = float(current_xyz[1])
             marker.pose.position.z = float(current_xyz[2])
             marker.pose.orientation.w = 1.0
-            marker.scale.x = 0.025  # 1.5cm (smaller than target)
-            marker.scale.y = 0.025
-            marker.scale.z = 0.025
-            marker.color.r = 0.0
-            marker.color.g = 0.5
-            marker.color.b = 1.0  # Blue
-            marker.color.a = 1.0  # Semi-transparent
+            marker.scale.x = marker.scale.y = marker.scale.z = 0.025
+            marker.color.r, marker.color.g, marker.color.b, marker.color.a = 0.0, 0.5, 1.0, 1.0
             self.current_ee_marker_pub.publish(marker)
-    
+
     def octomap_callback(self, msg: Octomap):
-        """
-        Process Octomap message and extract occupied voxel centers.
-        Uses a simplified approach - stores voxel centers in world frame.
-        """
-        try:
-            self.octomap_resolution = msg.resolution
-            
-            # Parse binary octomap data to extract occupied cells
-            # The data is in OcTree binary format - we'll use a simplified extraction
-            # For full parsing, would need octomap library, but we can use the grid topics instead
-            
-            # Flag that we're receiving octomap data
-            self.octomap_received = True
-            
-        except Exception as e:
-            self.get_logger().debug(f'Octomap parsing error: {e}')
-    
+        self.octomap_resolution = msg.resolution
+        self.octomap_received = True
+        
     def obstacle_pointcloud_callback(self, msg):
-        """
-        Parse occupied voxel centers from PointCloud2 for collision checking.
-        This is easier than parsing binary octomap data.
-        """
         try:
-            # Find field offsets
             fields = {f.name: f for f in msg.fields}
-            if 'x' not in fields or 'y' not in fields or 'z' not in fields:
-                return
+            if 'x' not in fields or 'y' not in fields or 'z' not in fields: return
+            x_offset, y_offset, z_offset = fields['x'].offset, fields['y'].offset, fields['z'].offset
+            point_step, data = msg.point_step, msg.data
             
-            x_offset = fields['x'].offset
-            y_offset = fields['y'].offset
-            z_offset = fields['z'].offset
-            
-            point_step = msg.point_step
-            data = msg.data
-            
-            # Clear old voxels and parse new ones
             new_voxels = set()
-            
-            # Sample every Nth point for performance (max 2000 voxels for collision checking)
             sample_step = max(1, len(data) // (point_step * 2000))
             
             for i in range(0, len(data) - point_step, point_step * sample_step):
                 x = struct.unpack_from('f', data, i + x_offset)[0]
                 y = struct.unpack_from('f', data, i + y_offset)[0]
                 z = struct.unpack_from('f', data, i + z_offset)[0]
-                
                 if not (np.isnan(x) or np.isnan(y) or np.isnan(z)):
-                    # Round to voxel resolution for faster lookup
-                    key = (
-                        round(x / self.octomap_resolution) * self.octomap_resolution,
-                        round(y / self.octomap_resolution) * self.octomap_resolution,
-                        round(z / self.octomap_resolution) * self.octomap_resolution
-                    )
+                    key = (round(x/self.octomap_resolution)*self.octomap_resolution,
+                           round(y/self.octomap_resolution)*self.octomap_resolution,
+                           round(z/self.octomap_resolution)*self.octomap_resolution)
                     new_voxels.add(key)
-            
             self.occupied_voxels = new_voxels
             self.octomap_received = True
-            
-            # Log voxel count periodically for debugging
-            if len(new_voxels) > 0 and len(new_voxels) % 100 == 0:
-                self.get_logger().info(f'🛡️ Obstacle map: {len(new_voxels)} voxels tracked')
-            
         except Exception as e:
-            self.get_logger().debug(f'Obstacle pointcloud parsing error: {e}')
-    
-    def check_octomap_collision(self, xyz):
-        """
-        Check if a target XYZ position collides with obstacles in the Octomap.
-        Uses the occupied_cells_vis_array topic for simpler collision detection.
-        
-        Args:
-            xyz: Target position [x, y, z]
-        
-        Returns:
-            tuple: (is_collision_free, message)
-        """
-        if not self.enable_obstacle_avoidance:
-            return True, "Obstacle avoidance disabled"
-        
-        if not self.octomap_received:
-            # No octomap data yet, allow movement but warn
-            return True, "No obstacle data yet"
-        
-        # Check against occupied voxels with safety margin
-        x, y, z = xyz
-        margin = self.obstacle_safety_margin
-        
-        for voxel in self.occupied_voxels:
-            vx, vy, vz = voxel
-            # Check if target is within safety margin of any occupied voxel
-            if (abs(x - vx) < margin and 
-                abs(y - vy) < margin and 
-                abs(z - vz) < margin):
-                return False, f"⚠️ Obstacle detected at ({vx:.2f}, {vy:.2f}, {vz:.2f})!"
-        
-        return True, "Path clear"
+            self.get_logger().debug(f'Obstacle pointcloud error: {e}')
+
     def dh_transform(self, a, alpha, d, theta):
-        """Compute DH transformation matrix"""
-        ct = np.cos(theta)
-        st = np.sin(theta)
-        ca = np.cos(alpha)
-        sa = np.sin(alpha)
-        
-        return np.array([
-            [ct,    -st*ca,  st*sa,   a*ct],
-            [st,     ct*ca, -ct*sa,   a*st],
-            [0,      sa,     ca,      d   ],
-            [0,      0,      0,       1   ]
-        ])
-    
+        ct, st, ca, sa = np.cos(theta), np.sin(theta), np.cos(alpha), np.sin(alpha)
+        return np.array([[ct, -st*ca, st*sa, a*ct],
+                         [st,  ct*ca,-ct*sa, a*st],
+                         [0,   sa,    ca,    d   ],
+                         [0,   0,     0,     1   ]])
+                         
     def forward_kinematics(self, joints):
-        """
-        Compute end-effector XYZ position from joint angles.
-        
-        Args:
-            joints: Array of joint angles [6 elements]
-        
-        Returns:
-            xyz: End-effector position [x, y, z]
-        """
         T = np.eye(4)
-        
-        # Apply transformations for the 4-DOF arm (first 4 joints)
         for i in range(4):
             a, alpha, d, offset = self.dh_params[i]
-            theta = joints[i] + offset
-            T = T @ self.dh_transform(a, alpha, d, theta)
-        
-        # Extract position (gripper offset already in DH params)
+            T = T @ self.dh_transform(a, alpha, d, joints[i] + offset)
         return T[:3, 3]
-    
-    def compute_jacobian(self, joints, epsilon=1e-6):
-        """
-        Compute numerical Jacobian matrix.
-        
-        Args:
-            joints: Current joint angles
-            epsilon: Small perturbation for numerical derivative
-        
-        Returns:
-            J: 3x4 Jacobian matrix (xyz vs first 4 joints)
-        """
-        J = np.zeros((3, 4))
-        pos0 = self.forward_kinematics(joints)
-        
-        for i in range(4):
-            joints_pert = joints.copy()
-            joints_pert[i] += epsilon
-            pos_pert = self.forward_kinematics(joints_pert)
-            J[:, i] = (pos_pert - pos0) / epsilon
-        return J
-    
-    def check_workspace_limits(self, xyz):
-        """
-        Check if target position is within safe workspace bounds.
-        
-        Args:
-            xyz: Target position [x, y, z]
-        
-        Returns:
-            bool: True if within limits, False otherwise
-        """
-        x, y, z = xyz
-        
-        # Define safe workspace bounds based on robot geometry
-        # These limits ensure the target is physically reachable
-        max_reach = 0.69
-        x_min, x_max = -max_reach, max_reach   # ±69cm reach
-        y_min, y_max = -max_reach, max_reach   # ±69cm lateral reach
-        z_min, z_max = 0.0, max_reach     # 0 to 69cm height above base
-        
-        # CRITICAL: Minimum distance from base origin to prevent self-collision
-        dist_from_base = np.sqrt(x**2 + y**2 + z**2)
-        min_safe_dist = 0.12  # 12cm minimum from base center
-        
-        if dist_from_base < min_safe_dist:
-            self.get_logger().warn(
-                f'⚠️ Target too close to base: {dist_from_base*100:.1f}cm '
-                f'(minimum: {min_safe_dist*100:.0f}cm)'
-            )
-            return False
-        
-        if x < x_min or x > x_max:
-            self.get_logger().warn(f'⚠️ X coordinate {x:.3f}m out of bounds [{x_min}, {x_max}]')
-            return False
-        
-        if y < y_min or y > y_max:
-            self.get_logger().warn(f'⚠️ Y coordinate {y:.3f}m out of bounds [{y_min}, {y_max}]')
-            return False
-        
-        if z < z_min or z > z_max:
-            self.get_logger().warn(f'⚠️ Z coordinate {z:.3f}m out of bounds [{z_min}, {z_max}]')
-            return False
-        
-        return True
-    
-    def check_joint_limits(self, joints):
-        """
-        Check if all joint angles are within safe mechanical limits.
-        
-        Args:
-            joints: Array of joint angles (radians)
-        
-        Returns:
-            bool: True if all joints within limits, False otherwise
-        """
-        # Joint limits: J0 = -360° to +360° (±2π), J1-J3 = 0-180° (π)
-        joint_limits = [
-            (-2 * np.pi, 2 * np.pi),   # J0: -360° to +360°
-            (0.0, np.pi),              # J1: 0-180°
-            (0.0, np.pi),              # J2: 0-180°
-            (0.0, np.pi),              # J3: 0-180°
-        ]
-        
-        for i in range(4):
-            joint_min, joint_max = joint_limits[i]
-            if joints[i] < joint_min or joints[i] > joint_max:
-                self.get_logger().warn(
-                    f'⚠️ Joint {i} angle {np.rad2deg(joints[i]):.1f}° '
-                    f'out of range [{np.rad2deg(joint_min):.0f}°, {np.rad2deg(joint_max):.0f}°]'
-                )
-                return False
-        
-        return True
-    
-    def check_simple_collision(self, joints):
-        """
-        Perform geometric self-collision checks based on robot configuration.
-        
-        Uses forward kinematics to compute actual link positions and checks
-        for minimum safe distances between non-adjacent links.
-        
-        Args:
-            joints: Array of joint angles
-        
-        Returns:
-            bool: True if no collision detected, False otherwise
-        """
-        j1, j2, j3, j4 = joints[:4]
-        
-        # Get link positions using forward kinematics
-        link_positions = self.compute_link_positions(joints)
-        
-        # Check 1: End-effector too close to base (self-collision)
-        # The gripper should never be within 5cm of the base origin
-        base_pos = np.array([0.0, 0.0, 0.0])
-        ee_pos = link_positions[-1]
-        ee_to_base_dist = np.linalg.norm(ee_pos - base_pos)
-        
-        if ee_to_base_dist < 0.05:  # 5cm minimum distance from base center
-            self.get_logger().warn(
-                f'⚠️ End-effector too close to base: {ee_to_base_dist*100:.1f}cm '
-                f'(minimum: 5cm)'
-            )
-            return False
-        
-        # Check 2: Wrist link too close to shoulder link
-        # link_positions[1] = shoulder, link_positions[3] = wrist
-        if len(link_positions) >= 4:
-            shoulder_pos = link_positions[1]
-            wrist_pos = link_positions[3]
-            wrist_to_shoulder_dist = np.linalg.norm(wrist_pos - shoulder_pos)
-            
-            if wrist_to_shoulder_dist < 0.05:  # 5cm minimum
-                self.get_logger().warn(
-                    f'⚠️ Wrist too close to shoulder: {wrist_to_shoulder_dist*100:.1f}cm '
-                    f'(minimum: 5cm)'
-                )
-                return False
-        
-        # Check 3: Arm folding back on itself (elbow angle check)
-        # When j2 and j3 create an acute angle that folds the arm back
-        elbow_angle = j2 + j3  # Combined angle
-        if elbow_angle > 5.5:  # > 315° combined = folding back
-            self.get_logger().warn(
-                f'⚠️ Arm folding back: combined elbow angle = {np.rad2deg(elbow_angle):.1f}° '
-                f'(maximum: 315°)'
-            )
-            return False
-        
-        # Check 4: End-effector below base plane (hitting the table)
-        if ee_pos[2] < -0.02:  # 2cm below base
-            self.get_logger().warn(
-                f'⚠️ End-effector below base: z={ee_pos[2]*100:.1f}cm '
-                f'(minimum: -2cm)'
-            )
-            return False
-        
-        return True
-    
+
     def compute_link_positions(self, joints):
-        """
-        Compute the position of each link origin using forward kinematics.
-        
-        Returns:
-            list: List of [x, y, z] positions for each link
-        """
-        positions = []
+        positions = [np.array([0.0, 0.0, 0.0])]
         T = np.eye(4)
-        
-        # Base position
-        positions.append(T[:3, 3].copy())
-        
-        # Compute each link position
         for i in range(4):
             a, alpha, d, offset = self.dh_params[i]
-            theta = joints[i] + offset
-            T = T @ self.dh_transform(a, alpha, d, theta)
+            T = T @ self.dh_transform(a, alpha, d, joints[i] + offset)
             positions.append(T[:3, 3].copy())
-        
         return positions
 
+    def compute_jacobian(self, joints, epsilon=1e-5):
+        """ Numeric Jacobian """
+        J = np.zeros((3, 4))
+        pos0 = self.forward_kinematics(joints)
+        for i in range(4):
+            j_pert = joints.copy()
+            j_pert[i] += epsilon
+            pos_pert = self.forward_kinematics(j_pert)
+            J[:, i] = (pos_pert - pos0) / epsilon
+        return J
+
+    def check_workspace_limits(self, xyz):
+        x, y, z = xyz
+        max_reach = 0.69
+        if np.sqrt(x**2 + y**2 + z**2) < 0.12: return False
+        if not (-max_reach <= x <= max_reach): return False
+        if not (-max_reach <= y <= max_reach): return False
+        if not (0.0 <= z <= max_reach): return False
+        return True
+
+    def check_joint_limits(self, joints):
+        limits = [(-2*np.pi, 2*np.pi), (0.0, np.pi), (0.0, np.pi), (0.0, np.pi)]
+        for i in range(4):
+            if not (limits[i][0] <= joints[i] <= limits[i][1]): return False
+        return True
+
+    def check_simple_collision(self, joints):
+        pos = self.compute_link_positions(joints)
+        ee_pos = pos[-1]
+        if np.linalg.norm(ee_pos - pos[0]) < 0.05: return False
+        if len(pos) >= 4 and np.linalg.norm(pos[3] - pos[1]) < 0.05: return False
+        if (joints[1] + joints[2]) > 5.5: return False
+        if ee_pos[2] < -0.02: return False
+        return True
+
+    def check_octomap_collision_all_links(self, joints):
+        """ Check all segments of the arm against the octomap point cloud """
+        if not self.enable_obstacle_avoidance or not self.octomap_received:
+            return True, "Path clear"
+            
+        link_pos = self.compute_link_positions(joints)
+        margin = self.obstacle_safety_margin
+        
+        points_to_check = []
+        for i in range(len(link_pos) - 1):
+            p1, p2 = link_pos[i], link_pos[i+1]
+            dist = np.linalg.norm(p2 - p1)
+            num_samples = max(2, int(dist / 0.03)) # sample every 3cm
+            for j in range(num_samples + 1):
+                points_to_check.append(p1 + (j/max(1,num_samples))*(p2 - p1))
+                
+        # Fast distance check
+        for pt in points_to_check:
+            for vx, vy, vz in self.occupied_voxels:
+                if (abs(pt[0]-vx) < margin and abs(pt[1]-vy) < margin and abs(pt[2]-vz) < margin):
+                    return False, f"Collision near ({vx:.2f}, {vy:.2f}, {vz:.2f})"
+        return True, "Path clear"
+
     def compute_ik(self, target_xyz, initial_joints):
-        """
-        Compute inverse kinematics using Jacobian pseudoinverse.
-        
-        Args:
-            target_xyz: Target end-effector position [x, y, z]
-            initial_joints: Starting joint configuration
-        
-        Returns:
-            joints: Solution joint angles (or None if failed)
-        """
-        # SAFETY CHECK 1: Validate workspace limits BEFORE starting IK
-        if not self.check_workspace_limits(target_xyz):
-            self.get_logger().error(
-                f'❌ Target position {target_xyz} outside safe workspace. '
-                f'Command rejected.'
-            )
-            return None
+        """ IK solver using Damped Least Squares (Levenberg-Marquardt) """
+        if not self.check_workspace_limits(target_xyz): return None
         
         joints = initial_joints.copy()
-        alpha = 0.5  # Step size factor
+        alpha = 0.5
+        damping = 0.05  # DLS damping factor to handle singularities
         
         for iteration in range(self.max_iter):
-            # Current position
             current_xyz = self.forward_kinematics(joints)
-            
-            # Error
             error = target_xyz - current_xyz
-            error_norm = np.linalg.norm(error)
-            
-            # Check convergence
-            if error_norm < self.tolerance:
-                self.get_logger().debug(f'IK converged in {iteration} iterations')
-                
-                # SAFETY CHECK 2: Validate solution before accepting
-                if not self.check_joint_limits(joints):
-                    self.get_logger().error(
-                        f'❌ IK solution violates joint limits. Command rejected.'
-                    )
-                    return None
-                
-                if not self.check_simple_collision(joints):
-                    self.get_logger().error(
-                        f'❌ IK solution causes collision. Command rejected.'
-                    )
-                    return None
-                
-                # All checks passed!
+            if np.linalg.norm(error) < self.tolerance:
+                if not self.check_joint_limits(joints): return None
+                if not self.check_simple_collision(joints): return None
                 return joints
-            
-            # Compute Jacobian
+                
             J = self.compute_jacobian(joints)
+            # Damped Least Squares: J^T * (J * J^T + lambda^2 * I)^-1
+            J_dls = J.T @ np.linalg.inv(J @ J.T + (damping**2) * np.eye(3))
             
-            # Pseudoinverse
-            J_pinv = np.linalg.pinv(J)
+            joints[:4] += alpha * (J_dls @ error)
+            joints[0] = np.clip(joints[0], -2*np.pi, 2*np.pi)
+            joints[1:4] = np.clip(joints[1:4], 0.0, np.pi)
             
-            # Update joints (only first 4 DOF)
-            delta_joints = alpha * (J_pinv @ error)
-            joints[:4] += delta_joints
-            
-            # Clamp joints to valid range during iteration
-            joints[:4] = np.clip(joints[:4], 0.0, np.pi)
-        
-        self.get_logger().warn(f'IK did not converge after {self.max_iter} iterations')
         return None
-    
-    def interpolate_trajectory(self, start_xyz, end_xyz):
-        """
-        Generate smooth trajectory with intermediate waypoints.
+
+    def generate_joint_trajectory(self, start_joints, end_joints):
+        """ Generate Minimum Jerk trajectory in joint space with angle wrap handling """
         
-        Args:
-            start_xyz: Starting position
-            end_xyz: Target position
+        # Calculate difference and normalize base joint (J0) to shortest path between [-pi, pi]
+        diff = end_joints - start_joints
+        diff[0] = (diff[0] + np.pi) % (2 * np.pi) - np.pi
         
-        Returns:
-            waypoints: List of intermediate XYZ positions
-        """
-        distance = np.linalg.norm(end_xyz - start_xyz)
-        num_steps = max(int(distance / self.step_size), 1)
+        optimal_end_joints = start_joints + diff
         
-        waypoints = []
+        max_diff = np.max(np.abs(diff[:4]))
+        duration = max(1.0, max_diff / self.max_joint_speed)
+        
+        num_steps = int(duration * self.control_rate)
+        trajectory = []
         for i in range(num_steps + 1):
-            alpha = i / num_steps
-            waypoint = start_xyz + alpha * (end_xyz - start_xyz)
-            waypoints.append(waypoint)
-        
-        return waypoints
-    
-    def publish_joint_target(self, joints):
-        """Publish joint target to /joint_targets topic"""
-        msg = JointState()
-        msg.name = [
-            'base_link_joint',
-            'link_1_shoulder_joint',
-            'link_2_elbow_joint',
-            'link_3_wrist_joint',
-            'link_3_wrist_to_gripper_base_joint',
-            'gripper_joint'
-        ]
-        msg.position = joints.tolist()
-        self.joint_pub.publish(msg)
-    
+            t = i / max(1, num_steps)
+            # Minimum jerk polynomial: s(t) = 10t^3 - 15t^4 + 6t^5
+            s = 10*(t**3) - 15*(t**4) + 6*(t**5)
+            traj_point = start_joints + s * diff
+            trajectory.append(traj_point)
+            
+        self.get_logger().info(f"Generated {num_steps} trajectory points over {duration:.1f}s")
+        return trajectory
+
     def publish_target_marker(self, target_xyz):
-        """Publish visualization marker for target position in RViz"""
         marker = Marker()
         marker.header.frame_id = 'world'
         marker.header.stamp = self.get_clock().now().to_msg()
@@ -615,153 +278,79 @@ class SimpleIKSolver(Node):
         marker.id = 0
         marker.type = Marker.SPHERE
         marker.action = Marker.ADD
-        
-        # Position
         marker.pose.position.x = float(target_xyz[0])
         marker.pose.position.y = float(target_xyz[1])
         marker.pose.position.z = float(target_xyz[2])
         marker.pose.orientation.w = 1.0
-        
-        # Scale (2cm sphere)
-        marker.scale.x = 0.02
-        marker.scale.y = 0.02
-        marker.scale.z = 0.02
-        
-        # Color (bright green)
-        marker.color.r = 0.0
-        marker.color.g = 1.0
-        marker.color.b = 0.0
-        marker.color.a = 1.0
-        
-        marker.lifetime.sec = 5  # Display for 5 seconds
-        
+        marker.scale.x = marker.scale.y = marker.scale.z = 0.02
+        marker.color.r, marker.color.g, marker.color.b, marker.color.a = 0.0, 1.0, 0.0, 1.0
+        marker.lifetime.sec = 5
         self.marker_pub.publish(marker)
-    
-    def cartesian_callback(self, msg: PoseStamped):
-        """
-        Handle incoming Cartesian position command.
-        
-        Generates smooth trajectory and executes motion.
-        """
-        # Wait for joint state
-        if not self.joints_updated:
-            self.get_logger().warn('Waiting for joint states...')
-            return
-        
-        # Extract target position
-        target_xyz = np.array([
-            msg.pose.position.x,
-            msg.pose.position.y,
-            msg.pose.position.z
-        ])
-        
-        self.get_logger().info(f'🎯 Cartesian command: x={target_xyz[0]:.3f}, '
-                              f'y={target_xyz[1]:.3f}, z={target_xyz[2]:.3f}')
-        
-        # =====================================================================
-        # PRE-VALIDATION: Check final target BEFORE generating trajectory
-        # =====================================================================
-        
-        # Check 1: Is the target within workspace limits?
-        if not self.check_workspace_limits(target_xyz):
-            self.get_logger().error(
-                f'❌ REJECTED: Target position outside safe workspace. '
-                f'Command ignored.'
-            )
-            return
-        
-        # Check 2: Can we compute a valid IK solution for the final target?
-        test_solution = self.compute_ik(target_xyz, self.current_joints)
-        if test_solution is None:
-            self.get_logger().error(
-                f'❌ REJECTED: Cannot find valid IK solution for target. '
-                f'Command ignored.'
-            )
-            return
-        
-        # Check 3: Does the IK solution cause collision?
-        if not self.check_simple_collision(test_solution):
-            self.get_logger().error(
-                f'❌ REJECTED: Target causes self-collision. '
-                f'Command ignored.'
-            )
-            return
-        
-        # Check 4: Is target position blocked by obstacles (Octomap)?
-        is_clear, obstacle_msg = self.check_octomap_collision(target_xyz)
-        if not is_clear:
-            self.get_logger().error(
-                f'❌ REJECTED: {obstacle_msg} '
-                f'Command ignored.'
-            )
-            return
-        
-        self.get_logger().info('✅ Target validated - proceeding with trajectory')
-        
-        # Publish marker for RViz visualization
-        self.publish_target_marker(target_xyz)
-        
-        # Get current EE position
-        current_xyz = self.forward_kinematics(self.current_joints)
-        
-        # Generate waypoints
-        waypoints = self.interpolate_trajectory(current_xyz, target_xyz)
-        self.get_logger().info(f'   Generated {len(waypoints)} waypoints')
-        
-        # PRE-VALIDATE ENTIRE PATH for obstacles before starting movement
-        if self.enable_obstacle_avoidance and self.octomap_received:
-            for i, waypoint in enumerate(waypoints):
-                is_clear, obstacle_msg = self.check_octomap_collision(waypoint)
-                if not is_clear:
-                    self.get_logger().error(
-                        f'❌ REJECTED: Path blocked at waypoint {i}/{len(waypoints)}: {obstacle_msg}'
-                    )
-                    return
-            self.get_logger().info(f'   ✅ Path collision-free ({len(self.occupied_voxels)} voxels checked)')
-        
-        # Execute trajectory
-        sleep_time = 1.0 / self.control_rate
-        current_joints = self.current_joints.copy()
-        
-        for i, waypoint in enumerate(waypoints):
-            # Check 5: Collision check for EACH waypoint along path (not just target)
-            is_clear, obstacle_msg = self.check_octomap_collision(waypoint)
-            if not is_clear:
-                self.get_logger().error(
-                    f'❌ STOPPED at waypoint {i}/{len(waypoints)}: {obstacle_msg}'
-                )
-                return
-            
-            # Compute IK for this waypoint
-            solution = self.compute_ik(waypoint, current_joints)
-            
-            if solution is None:
-                self.get_logger().error(f'❌ IK failed at waypoint {i}/{len(waypoints)}')
-                return
-            
-            # Publish joint target
-            self.publish_joint_target(solution)
-            current_joints = solution
-            
-            # Rate limiting
-            time.sleep(sleep_time)
-        
-        self.get_logger().info('✅ Cartesian motion complete')
 
+    def cartesian_callback(self, msg: PoseStamped):
+        if not self.joints_updated: return
+        if self.is_moving:
+            self.get_logger().warn("Already moving, ignoring command")
+            return
+            
+        target_xyz = np.array([msg.pose.position.x, msg.pose.position.y, msg.pose.position.z])
+        
+        if not self.check_workspace_limits(target_xyz): return
+        target_joints = self.compute_ik(target_xyz, self.current_joints)
+        if target_joints is None: 
+            self.get_logger().error("Cannot find IK solution")
+            return
+            
+        is_clear, obs_msg = self.check_octomap_collision_all_links(target_joints)
+        if not is_clear:
+            self.get_logger().error(f"Target causes collision: {obs_msg}")
+            return
+            
+        self.publish_target_marker(target_xyz)
+        self.trajectory_points = self.generate_joint_trajectory(self.current_joints, target_joints)
+        
+        for i in range(0, len(self.trajectory_points), max(1, len(self.trajectory_points)//10)):
+            is_clear, obs_msg = self.check_octomap_collision_all_links(self.trajectory_points[i])
+            if not is_clear:
+                self.get_logger().error(f"Path blocked mid-way: {obs_msg}")
+                return
+                
+        self.trajectory_idx = 0
+        self.is_moving = True
+
+    def control_timer_callback(self):
+        """ Executed dynamically based on control rate (e.g. 50Hz) """
+        if self.is_moving and self.trajectory_idx < len(self.trajectory_points):
+            joints = self.trajectory_points[self.trajectory_idx]
+            
+            # Dynamic collision check during movement (check interval)
+            if self.trajectory_idx % 5 == 0:
+                is_clear, msg = self.check_octomap_collision_all_links(joints)
+                if not is_clear:
+                    self.get_logger().error(f"EMERGENCY STOP (Dynamic Obstacle): {msg}")
+                    self.is_moving = False
+                    return
+                    
+            msg = JointState()
+            msg.name = ['base_link_joint', 'link_1_shoulder_joint', 'link_2_elbow_joint', 'link_3_wrist_joint', 'link_3_wrist_to_gripper_base_joint', 'gripper_joint']
+            msg.position = joints.tolist()
+            self.joint_pub.publish(msg)
+            
+            self.trajectory_idx += 1
+            if self.trajectory_idx >= len(self.trajectory_points):
+                self.is_moving = False
+                self.get_logger().info('✅ Cartesian motion complete')
 
 def main(args=None):
     rclpy.init(args=args)
-    
     node = SimpleIKSolver()
-    
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        node.get_logger().info('Shutting down Simple IK Solver...')
+        pass
     finally:
         node.destroy_node()
         rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()
