@@ -1,0 +1,65 @@
+# =============================================================================
+# Visiona Robot — Global Kinematic Parameters
+# =============================================================================
+# SINGLE SOURCE OF TRUTH for all kinematic constants.
+# This file is loaded by: simple_ik_solver, bridge_node, and any future node
+# that needs the robot's physical dimensions.
+#
+# DH Convention (Modified Denavit-Hartenberg):
+#   Each row: [a_i, alpha_i, d_i, theta_offset_i]
+#     a_i     — link length along X_i (meters)
+#     alpha_i — twist angle about X_i (radians)
+#     d_i     — link offset along Z_{i-1} (meters)
+#     theta_offset_i — fixed angular offset added to joint variable (radians)
+#
+# Joint chain:
+#   world → base → base_link(J0) → shoulder(J1) → elbow(J2) → wrist(J3) → gripper
+# =============================================================================
+
+kinematic_params:
+  ros__parameters:
+
+    # DH parameters [a, alpha, d, theta_offset] for joints 0-3
+    dh_params:
+      joint_0: {a: 0.0,   alpha: 1.5708, d: 0.14,   theta_offset: 0.0}
+      joint_1: {a: 0.185, alpha: 0.0,    d: 0.0,    theta_offset: 0.0}
+      joint_2: {a: 0.119, alpha: 0.0,    d: 0.0,    theta_offset: 0.0}
+      joint_3: {a: 0.25,  alpha: 0.0,    d: -0.005, theta_offset: 0.0}
+
+    # Joint limits (radians)
+    joint_limits:
+      joint_0: {lower: -3.14159, upper: 3.14159}
+      joint_1: {lower: 0.0,      upper: 3.14159}
+      joint_2: {lower: 0.0,      upper: 3.14159}
+      joint_3: {lower: 0.0,      upper: 3.14159}
+
+    # Cartesian workspace bounds (meters)
+    workspace:
+      x_min: -0.63
+      x_max:  0.63
+      y_min: -0.63
+      y_max:  0.63
+      z_min:  0.0
+      z_max:  0.63
+      min_radius: 0.12   # minimum distance from base (self-collision zone)
+      max_reach:  0.69   # theoretical max reach
+
+    # IK solver tuning
+    ik_solver:
+      max_iterations: 200
+      tolerance: 0.001       # 1 mm convergence
+      damping: 0.05          # DLS damping factor (singularity avoidance)
+      step_alpha: 0.5        # IK step size
+
+    # Trajectory generation
+    trajectory:
+      control_rate: 50.0     # Hz
+      max_joint_speed: 1.0   # rad/s
+
+    # Collision avoidance
+    collision:
+      enable_obstacle_avoidance: true
+      obstacle_safety_margin: 0.10  # m
+      self_collision_min_dist: 0.05 # m (between non-adjacent links)
+      ground_clearance: -0.02      # m (allow 2cm below base plane)
+      max_elbow_sum: 5.5           # rad (prevents arm folding back)

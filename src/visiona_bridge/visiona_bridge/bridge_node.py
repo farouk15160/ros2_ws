@@ -145,6 +145,8 @@ class RobotArmBridge(Node):
         
         # Cartesian pose publisher timer
         self.create_timer(0.5, self._publish_cartesian_timer)
+        
+     
     
     # === Hardware callbacks ===
     
@@ -169,6 +171,8 @@ class RobotArmBridge(Node):
             self._send_command(ord('O'), [], 0.0, 0.0)  # Safety OFF on boot
         self.emit_full_status()
     
+ 
+    
     def _send_command(self, cmd_id: int, angles_deg: list, speed: float, gripper_cur: float) -> bool:
         """Send command via simulation or serial."""
         if self.hardware.simulation_mode:
@@ -190,14 +194,49 @@ class RobotArmBridge(Node):
         return state
     
     def _publish_cartesian_timer(self):
-        """Timer callback to publish cartesian pose."""
-        pose = self.robot_publishers.publish_cartesian_pose(
-            self.cartesian.tf_buffer,
-            self.cartesian.planning_frame,
-            self.cartesian.ee_link
-        )
-        if pose and self.socketio:
-            emit_cartesian_pose(self.socketio, *pose)
+        """Timer callback to publish cartesian pose using DH FK (not TF).
+        
+        Uses the same DH forward kinematics as the IK solver to ensure
+        the GUI Cartesian display matches the IK solver's world model.
+        The URDF TF chain has different joint transforms that don't
+        produce the correct physical end-effector position.
+        """
+        import numpy as np
+        
+        # DH params: [a, alpha, d, theta_offset] — same as IK solver
+        dh_params = [
+            [0.0,     np.pi/2,   0.14,   0.0],
+            [0.185,   0.0,       0.0,    0.0],
+            [0.119,   0.0,       0.0,    0.0],
+            [0.25,    0.0,       -0.005, 0.0],
+        ]
+        
+        # Get current joint angles (radians) from hardware state
+        state = self.hardware.get_state_dict()
+        joint_angles_deg = state.get('joint_angles', [0, 90, 90, 90, 0, 15])
+        
+        # Convert first 4 joints to radians
+        joints_rad = [math.radians(a) for a in joint_angles_deg[:4]]
+        
+        # Forward kinematics using DH convention
+        T = np.eye(4)
+        for i in range(4):
+            a, alpha, d, offset = dh_params[i]
+            theta = joints_rad[i] + offset
+            ct, st = np.cos(theta), np.sin(theta)
+            ca, sa = np.cos(alpha), np.sin(alpha)
+            T_i = np.array([
+                [ct, -st*ca,  st*sa, a*ct],
+                [st,  ct*ca, -ct*sa, a*st],
+                [0,   sa,     ca,    d   ],
+                [0,   0,      0,     1   ]
+            ])
+            T = T @ T_i
+        
+        x, y, z = float(T[0, 3]), float(T[1, 3]), float(T[2, 3])
+        
+        if self.socketio:
+            emit_cartesian_pose(self.socketio, x, y, z)
     
     def _check_timeout(self):
         """Check for communication timeout."""
@@ -261,10 +300,10 @@ class RobotArmBridge(Node):
         
         # DH parameters (same as IK solver)
         dh_params = [
-            [0.0,     np.pi/2,   0.14,   0.0],       # Joint 1
-            [0.185,   0.0,       0.0,    0.0],       # Joint 2
-            [0.119,   0.0,       0.0,    0.0],       # Joint 3
-            [0.22,    0.0,       -0.005, 0.0],       # Joint 4
+            [0.0,     np.pi/2,   0.14,   0.0],       # Joint 0: base → shoulder
+            [0.185,   0.0,       0.0,    0.0],       # Joint 1: shoulder → elbow
+            [0.119,   0.0,       0.0,    0.0],       # Joint 2: elbow → wrist
+            [0.25,    0.0,       -0.005, 0.0],       # Joint 3: wrist → gripper
         ]
         
         # Forward kinematics to get end-effector position
@@ -289,7 +328,7 @@ class RobotArmBridge(Node):
         
         # Check 1: Joint limits
         # J0 (base): 0-360°, J1-J3: 0-180°
-        joint_limits = [(-360, 360), (0, 180), (0, 180), (0, 180)]
+        joint_limits = [(-180, 180), (0, 180), (0, 180), (0, 180)]
         for i, angle in enumerate(angles_deg[:4]):
             min_lim, max_lim = joint_limits[i]
             if angle < min_lim or angle > max_lim:

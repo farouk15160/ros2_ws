@@ -13,7 +13,6 @@ setup(
         package_name + '.ros2_interface',
         package_name + '.gui',
         package_name + '.state',
-        package_name + '.llm_control',
         package_name + '.visual_servoing',
     ],
     data_files=[
@@ -33,6 +32,9 @@ setup(
 
         (os.path.join('share', package_name, 'config'), 
             glob(os.path.join('config', '*.yaml'))),
+
+        (os.path.join('share', package_name, 'config', 'robots'), 
+            glob(os.path.join('config', 'robots', '*.yaml'))),
             
         (os.path.join('share', package_name, 'meshes'), 
             glob(os.path.join('meshes', '*.stl'))),
@@ -54,10 +56,6 @@ setup(
     entry_points={
         'console_scripts': [
             'web_gui = visiona_bridge.web_gui_node:main',
-            # LLM Control
-            'llm_task_planner = visiona_bridge.llm_control.llm_task_planner:main',
-            'vla_action_generator = visiona_bridge.llm_control.vla_action_generator:main',
-            'task_executor = visiona_bridge.llm_control.task_executor:main',
             # Visual Servoing
             'visual_servo_node = visiona_bridge.visual_servoing.visual_servo_node:main',
             'simple_ik_solver = visiona_bridge.simple_ik_solver:main',

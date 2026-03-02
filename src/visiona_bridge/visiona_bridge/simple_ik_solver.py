@@ -23,24 +23,53 @@ class SimpleIKSolver(Node):
     def __init__(self):
         super().__init__('simple_ik_solver')
         
-        # Parameters
+        # --- IK Solver Parameters (overridable from kinematic_params.yaml) ---
+        self.declare_parameter('ik_solver.max_iterations', 200)
+        self.declare_parameter('ik_solver.tolerance', 0.001)  # 1mm
+        self.declare_parameter('ik_solver.damping', 0.05)
+        self.declare_parameter('ik_solver.step_alpha', 0.5)
+        self.declare_parameter('trajectory.control_rate', 50.0)
+        self.declare_parameter('trajectory.max_joint_speed', 1.0)
+        
+        # Legacy flat-name params (for backward compat with old configs)
         self.declare_parameter('max_iterations', 200)
-        self.declare_parameter('tolerance', 0.001)  # 1mm
-        self.declare_parameter('control_rate', 50.0)  # Hz (increased for smoothness)
-        self.declare_parameter('max_joint_speed', 1.0)  # rad/s max joint velocity
+        self.declare_parameter('tolerance', 0.001)
+        self.declare_parameter('control_rate', 50.0)
+        self.declare_parameter('max_joint_speed', 1.0)
         
-        self.max_iter = self.get_parameter('max_iterations').value
-        self.tolerance = self.get_parameter('tolerance').value
-        self.control_rate = self.get_parameter('control_rate').value
-        self.max_joint_speed = self.get_parameter('max_joint_speed').value
+        self.max_iter = (self.get_parameter('ik_solver.max_iterations').value
+                         or self.get_parameter('max_iterations').value)
+        self.tolerance = (self.get_parameter('ik_solver.tolerance').value
+                          or self.get_parameter('tolerance').value)
+        self.ik_damping = (self.get_parameter('ik_solver.damping').value or 0.05)
+        self.ik_alpha = (self.get_parameter('ik_solver.step_alpha').value or 0.5)
+        self.control_rate = (self.get_parameter('trajectory.control_rate').value
+                             or self.get_parameter('control_rate').value)
+        self.max_joint_speed = (self.get_parameter('trajectory.max_joint_speed').value
+                                or self.get_parameter('max_joint_speed').value)
         
-        # Robot DH parameters [a, alpha, d, theta_offset]
-        self.dh_params = [
-            [0.0,     np.pi/2,   0.14,   0.0],       # Joint 1
-            [0.185,   0.0,       0.0,    0.0],       # Joint 2
-            [0.119,   0.0,       0.0,    0.0],       # Joint 3
-            [0.25,    0.0,       -0.005, 0.0],       # Joint 4 (inkl Gripper)
+        # --- DH Parameters (loaded from kinematic_params.yaml or fallback) ---
+        # Declare per-joint DH params so they can be overridden from YAML
+        dh_defaults = [
+            [0.0,   np.pi/2, 0.14,   0.0],   # Joint 0: base → shoulder
+            [0.185, 0.0,     0.0,    0.0],   # Joint 1: shoulder → elbow
+            [0.119, 0.0,     0.0,    0.0],   # Joint 2: elbow → wrist
+            [0.25,  0.0,     -0.005, 0.0],   # Joint 3: wrist → gripper (incl. gripper)
         ]
+        self.dh_params = []
+        for i, (a, alpha, d, off) in enumerate(dh_defaults):
+            self.declare_parameter(f'dh_params.joint_{i}.a', a)
+            self.declare_parameter(f'dh_params.joint_{i}.alpha', alpha)
+            self.declare_parameter(f'dh_params.joint_{i}.d', d)
+            self.declare_parameter(f'dh_params.joint_{i}.theta_offset', off)
+            self.dh_params.append([
+                self.get_parameter(f'dh_params.joint_{i}.a').value,
+                self.get_parameter(f'dh_params.joint_{i}.alpha').value,
+                self.get_parameter(f'dh_params.joint_{i}.d').value,
+                self.get_parameter(f'dh_params.joint_{i}.theta_offset').value,
+            ])
+        
+        self.get_logger().info(f'DH params loaded: {self.dh_params}')
         
         self.current_joints = np.array([0.0, 1.57, 1.57, 1.57, 0.0, 0.26])
         self.joints_updated = False
@@ -58,11 +87,25 @@ class SimpleIKSolver(Node):
         qos_profile = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT, history=HistoryPolicy.KEEP_LAST, depth=10)
         self.joint_state_sub = self.create_subscription(JointState, '/joint_states', self.joint_state_callback, qos_profile)
         
-        # Obstacle Avoidance
+        # Obstacle Avoidance (overridable from kinematic_params.yaml)
+        self.declare_parameter('collision.enable_obstacle_avoidance', True)
+        self.declare_parameter('collision.obstacle_safety_margin', 0.10)
+        self.declare_parameter('collision.self_collision_min_dist', 0.05)
+        self.declare_parameter('collision.ground_clearance', -0.02)
+        self.declare_parameter('collision.max_elbow_sum', 5.5)
+        # Legacy flat names
         self.declare_parameter('enable_obstacle_avoidance', True)
         self.declare_parameter('obstacle_safety_margin', 0.10)
-        self.enable_obstacle_avoidance = self.get_parameter('enable_obstacle_avoidance').value
-        self.obstacle_safety_margin = self.get_parameter('obstacle_safety_margin').value
+        
+        self.enable_obstacle_avoidance = (
+            self.get_parameter('collision.enable_obstacle_avoidance').value
+            and self.get_parameter('enable_obstacle_avoidance').value)
+        self.obstacle_safety_margin = (
+            self.get_parameter('collision.obstacle_safety_margin').value or
+            self.get_parameter('obstacle_safety_margin').value)
+        self.self_collision_min_dist = self.get_parameter('collision.self_collision_min_dist').value
+        self.ground_clearance = self.get_parameter('collision.ground_clearance').value
+        self.max_elbow_sum = self.get_parameter('collision.max_elbow_sum').value
         
         self.occupied_voxels = set()
         self.octomap_resolution = 0.02
@@ -174,27 +217,66 @@ class SimpleIKSolver(Node):
         return J
 
     def check_workspace_limits(self, xyz):
+        """Verify target is within reachable workspace."""
         x, y, z = xyz
         max_reach = 0.69
-        if np.sqrt(x**2 + y**2 + z**2) < 0.12: return False
-        if not (-max_reach <= x <= max_reach): return False
-        if not (-max_reach <= y <= max_reach): return False
-        if not (0.0 <= z <= max_reach): return False
+        dist = np.sqrt(x**2 + y**2 + z**2)
+        if dist < 0.12:
+            self.get_logger().warn(f'Target too close to base: {dist:.3f}m < 0.12m')
+            return False
+        if not (-max_reach <= x <= max_reach):
+            self.get_logger().warn(f'X={x:.3f} outside workspace [{-max_reach}, {max_reach}]')
+            return False
+        if not (-max_reach <= y <= max_reach):
+            self.get_logger().warn(f'Y={y:.3f} outside workspace [{-max_reach}, {max_reach}]')
+            return False
+        if not (0.0 <= z <= max_reach):
+            self.get_logger().warn(f'Z={z:.3f} outside workspace [0.0, {max_reach}]')
+            return False
         return True
 
     def check_joint_limits(self, joints):
-        limits = [(-2*np.pi, 2*np.pi), (0.0, np.pi), (0.0, np.pi), (0.0, np.pi)]
+        """Verify all joints are within mechanical limits."""
+        limits = [(-np.pi, np.pi), (0.0, np.pi), (0.0, np.pi), (0.0, np.pi)]
         for i in range(4):
-            if not (limits[i][0] <= joints[i] <= limits[i][1]): return False
+            if not (limits[i][0] <= joints[i] <= limits[i][1]):
+                self.get_logger().debug(f'Joint {i} = {np.rad2deg(joints[i]):.1f}° out of limits')
+                return False
         return True
 
     def check_simple_collision(self, joints):
+        """Check for self-collision using link capsule distances and arm geometry."""
         pos = self.compute_link_positions(joints)
         ee_pos = pos[-1]
-        if np.linalg.norm(ee_pos - pos[0]) < 0.05: return False
-        if len(pos) >= 4 and np.linalg.norm(pos[3] - pos[1]) < 0.05: return False
-        if (joints[1] + joints[2]) > 5.5: return False
-        if ee_pos[2] < -0.02: return False
+        
+        # Check 1: End-effector too close to base (self-collision)
+        if np.linalg.norm(ee_pos - pos[0]) < self.self_collision_min_dist:
+            self.get_logger().debug('Self-collision: EE too close to base')
+            return False
+        
+        # Check 2: Non-adjacent link proximity (wrist close to shoulder)
+        if len(pos) >= 4 and np.linalg.norm(pos[3] - pos[1]) < self.self_collision_min_dist:
+            self.get_logger().debug('Self-collision: wrist too close to shoulder')
+            return False
+        
+        # Check 3: All non-adjacent link pairs (capsule check)
+        for i in range(len(pos)):
+            for j in range(i + 2, len(pos)):  # skip adjacent links
+                dist = np.linalg.norm(pos[j] - pos[i])
+                if dist < self.self_collision_min_dist:
+                    self.get_logger().debug(f'Self-collision: link {i} ↔ link {j} dist={dist:.3f}m')
+                    return False
+        
+        # Check 4: Arm folding back on itself
+        if (joints[1] + joints[2]) > self.max_elbow_sum:
+            self.get_logger().debug(f'Arm fold-back: elbow sum {np.rad2deg(joints[1]+joints[2]):.0f}°')
+            return False
+        
+        # Check 5: Ground collision
+        if ee_pos[2] < self.ground_clearance:
+            self.get_logger().debug(f'Ground collision: EE z={ee_pos[2]:.3f}m')
+            return False
+        
         return True
 
     def check_octomap_collision_all_links(self, joints):
@@ -221,29 +303,49 @@ class SimpleIKSolver(Node):
         return True, "Path clear"
 
     def compute_ik(self, target_xyz, initial_joints):
-        """ IK solver using Damped Least Squares (Levenberg-Marquardt) """
-        if not self.check_workspace_limits(target_xyz): return None
+        """
+        IK solver using Damped Least Squares (Levenberg-Marquardt).
+        
+        Algorithm:
+          1. Compute FK for current joint guess
+          2. Compute Cartesian error e = target - current
+          3. Compute Jacobian J (3×4 numeric)
+          4. DLS update: dq = J^T (J J^T + λ²I)^{-1} e
+          5. Clip joints to limits, repeat
+        
+        Returns: joint array or None if no solution found.
+        """
+        if not self.check_workspace_limits(target_xyz):
+            return None
         
         joints = initial_joints.copy()
-        alpha = 0.5
-        damping = 0.05  # DLS damping factor to handle singularities
+        alpha = self.ik_alpha
+        damping = self.ik_damping
         
         for iteration in range(self.max_iter):
             current_xyz = self.forward_kinematics(joints)
             error = target_xyz - current_xyz
-            if np.linalg.norm(error) < self.tolerance:
-                if not self.check_joint_limits(joints): return None
-                if not self.check_simple_collision(joints): return None
+            err_norm = np.linalg.norm(error)
+            
+            if err_norm < self.tolerance:
+                if not self.check_joint_limits(joints):
+                    self.get_logger().debug(f'IK converged but joints out of limits')
+                    return None
+                if not self.check_simple_collision(joints):
+                    self.get_logger().debug(f'IK converged but collision detected')
+                    return None
+                self.get_logger().debug(f'IK solved in {iteration} iterations, error={err_norm:.4f}m')
                 return joints
                 
             J = self.compute_jacobian(joints)
-            # Damped Least Squares: J^T * (J * J^T + lambda^2 * I)^-1
+            # Damped Least Squares: dq = J^T (J J^T + λ²I)^{-1} e
             J_dls = J.T @ np.linalg.inv(J @ J.T + (damping**2) * np.eye(3))
             
             joints[:4] += alpha * (J_dls @ error)
             joints[0] = np.clip(joints[0], -2*np.pi, 2*np.pi)
             joints[1:4] = np.clip(joints[1:4], 0.0, np.pi)
-            
+        
+        self.get_logger().warn(f'IK failed to converge after {self.max_iter} iterations')
         return None
 
     def generate_joint_trajectory(self, start_joints, end_joints):

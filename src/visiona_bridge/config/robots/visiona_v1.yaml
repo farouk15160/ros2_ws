@@ -1,0 +1,41 @@
+robot:
+  name: "Visiona V1"
+  dof: 6
+  has_gripper: true
+
+kinematics:
+  # Denavit-Hartenberg parameters: [a, alpha, d, theta_offset]
+  dh_params:
+    - [0.0, 1.5708, 0.14, 0.0]
+    - [0.185, 0.0, 0.0, 0.0]
+    - [0.119, 0.0, 0.0, 0.0]
+    - [0.25, 0.0, -0.005, 0.0]
+    
+  workspace:
+    x_bounds: [-0.63, 0.63]
+    y_bounds: [-0.63, 0.63]
+    z_bounds: [0.0, 0.63]
+    min_radius: 0.12 # Minimum distance from base to avoid self-collision
+
+# Hardware section is optional. If omitted, the bridge operates in logic/IK mode only,
+# assuming the robot handles its own low-level PID/hardware control.
+hardware:
+  enabled: true
+  type: "esp32_pca9685" # or "direct_pwm", "dynamixel", etc.
+  pins:
+    stepper:
+      dir: 18
+      step: 19
+      enable: 21
+    servos:
+      controller: "pca9685"
+      address: 0x40
+      channels: [0, 15, 12, 11, 10, 8]  # Joint 0->5 mappings
+    sensors:
+      current_main: 34 # Analog pin for ACS712
+      current_gripper: 0x41 # I2C address for INA219
+  kinematic_hardware:
+    stepper_steps_per_degree: 8.8888
+    home_position: [90.0, 45.0, 135.0, 90.0, 90.0, 0.0]
+    limits_min: [-180, 0, 0, 0, 0, 0]
+    limits_max: [180, 180, 180, 180, 180, 180]

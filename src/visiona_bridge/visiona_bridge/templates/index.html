@@ -20,7 +20,7 @@
       --info-color: #3498db;
       --warn-color: #f1c40f;
     }
-
+    
     * {
       box-sizing: border-box;
     }
@@ -472,6 +472,7 @@
     <button class="tab-button" onclick="openTab(event, 'tab-sequencer')">
       📊 Sequencer
     </button>
+
     <button class="tab-button" onclick="openTab(event, 'tab-settings')">
       ⚙️ Settings
     </button>
@@ -710,6 +711,9 @@
       </div>
     </div>
 
+
+
+
     <div id="tab-settings" class="tab-pane">
       <div class="tab-layout">
         <div class="panel panel-col-1-3">
@@ -883,6 +887,9 @@
         document.getElementById('cart-z').innerText = data.z.toFixed(3);
       });
 
+
+
+
     }
 
     function jog(x, y, z) {
@@ -924,6 +931,9 @@
         });
     }
 
+
+
+
     // --- initializeGui ---
     function initializeGui() {
       if (isGuiInitialized) return;
@@ -952,8 +962,8 @@
 
       JOINT_NAMES.forEach((name, i) => {
         // J0 (base) has different limits: -360 to 360
-        const defaultMin = (i === 0) ? -360 : 0;
-        const defaultMax = (i === 0) ? 360 : 180;
+        const defaultMin = (i === 0) ? -180 : 0;
+        const defaultMax = (i === 0) ? 180 : 180;
         slidersContainer.innerHTML += `<div class="control-group"><label for="j${i}">${name} (J${i}): <span id="j${i}-value" class="value-display">90</span>°</label><input type="range" id="j${i}" value="90" min="${defaultMin}" max="${defaultMax}"></div>`;
         statusContainer.innerHTML += `<div>${name}: <span id="s${i}" class="status-value">0.00</span></div>`;
         limitsContainer.innerHTML += `<label for="min-j${i}">J${i}:</label><input type="number" id="min-j${i}" value="${defaultMin}"><input type="number" id="max-j${i}" value="${defaultMax}">`;

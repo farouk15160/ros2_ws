@@ -31,20 +31,11 @@ def generate_launch_description():
                                          choices=['low', 'high'],
                                          description='Mapping quality: low (2cm, fast) or high (5mm, accurate)')
     
-    # NEW: LLM/VLA Control option
-    llm_arg = DeclareLaunchArgument('llm', default_value='false',
-                                    description='Enable LLM/VLA natural language control')
-    language_arg = DeclareLaunchArgument('language', default_value='en',
-                                         choices=['en', 'de'],
-                                         description='LLM language (English or German)')
-    
     mode = LaunchConfiguration('mode')
     gui = LaunchConfiguration('gui')
     viz = LaunchConfiguration('viz')
     camera = LaunchConfiguration('camera')
     mapping_quality = LaunchConfiguration('mapping')
-    llm = LaunchConfiguration('llm')
-    language = LaunchConfiguration('language')
     
     # Path to Xacro file
     xacro_file = PathJoinSubstitution([visiona_bridge_share, 'urdf', 'visiona.urdf.xacro'])
@@ -103,16 +94,7 @@ def generate_launch_description():
         ]
     )
     
-    # LLM Control System
-    llm_control_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            PathJoinSubstitution([visiona_bridge_share, 'launch', 'llm_control.launch.py'])
-        ]),
-        launch_arguments={
-            'language': language,
-        }.items(),
-        condition=IfCondition(llm)
-    )
+   
     
     # Camera Launch
     try:
@@ -334,8 +316,6 @@ def generate_launch_description():
         viz_arg,  # Visualization option
         camera_arg,
         mapping_arg,
-        llm_arg,  # NEW: LLM control
-        language_arg,  # NEW: LLM language
         
         # Core nodes
         robot_state_publisher,
@@ -364,6 +344,4 @@ def generate_launch_description():
         rtabmap_node,        # Colored RGB point cloud SLAM
         colored_map_node,    # Photo-realistic colored point cloud accumulator
         
-        # LLM Control (conditional)
-        llm_control_launch,  # if llm:=true
     ])

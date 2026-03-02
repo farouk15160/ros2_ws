@@ -43,9 +43,11 @@ class RobotSubscribers:
     
     def _joint_command_cb(self, msg: JointState):
         """Handle joint position command."""
+        # self.node.get_logger().info(f"Received {len(msg.position)} joint targets")
         if len(msg.position) != 6:
             return
         angles_deg = [self.bridge.rad_to_deg(p) for p in msg.position]
+        # self.node.get_logger().info(f"Angles: {angles_deg}")
         self.bridge.send_joint_command(angles_deg)
     
     def _gripper_command_cb(self, msg: Float32MultiArray):
