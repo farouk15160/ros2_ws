@@ -15,6 +15,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped, Point
 from sensor_msgs.msg import JointState
 from visualization_msgs.msg import Marker
+from std_msgs.msg import String
 from octomap_msgs.msg import Octomap
 import numpy as np
 import struct
@@ -79,6 +80,8 @@ class SimpleIKSolver(Node):
         self.marker_pub = self.create_publisher(Marker, '/visiona/target_marker', 10)
         self.current_ee_marker_pub = self.create_publisher(Marker, '/visiona/current_ee_marker', 10)
         self.current_pose_pub = self.create_publisher(PoseStamped, '/visiona/current_pose', 10)
+        self.motion_status_pub = self.create_publisher(String, '/visiona/motion_status', 10)
+        self._publish_motion_status('idle')
         
         # Subscribers
         self.cartesian_sub = self.create_subscription(PoseStamped, '/visiona/cartesian_command', self.cartesian_callback, 10)
@@ -419,6 +422,12 @@ class SimpleIKSolver(Node):
                 
         self.trajectory_idx = 0
         self.is_moving = True
+        self._publish_motion_status('moving')
+
+    def _publish_motion_status(self, status: str):
+        msg = String()
+        msg.data = status
+        self.motion_status_pub.publish(msg)
 
     def control_timer_callback(self):
         """ Executed dynamically based on control rate (e.g. 50Hz) """
@@ -431,6 +440,7 @@ class SimpleIKSolver(Node):
                 if not is_clear:
                     self.get_logger().error(f"EMERGENCY STOP (Dynamic Obstacle): {msg}")
                     self.is_moving = False
+                    self._publish_motion_status('idle')
                     return
                     
             msg = JointState()
@@ -441,6 +451,7 @@ class SimpleIKSolver(Node):
             self.trajectory_idx += 1
             if self.trajectory_idx >= len(self.trajectory_points):
                 self.is_moving = False
+                self._publish_motion_status('idle')
                 self.get_logger().info('✅ Cartesian motion complete')
 
 def main(args=None):

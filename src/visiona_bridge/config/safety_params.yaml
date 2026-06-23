@@ -1,0 +1,23 @@
+# URAF Safety Architecture — PLAN.md §19.2
+safety_params:
+  ros__parameters:
+    joint_limits_deg:
+      joint_0: {lower: -180.0, upper: 180.0}
+      joint_1: {lower: 0.0, upper: 180.0}
+      joint_2: {lower: 0.0, upper: 180.0}
+      joint_3: {lower: 0.0, upper: 180.0}
+      joint_4: {lower: -180.0, upper: 180.0}
+      joint_5: {lower: 0.0, upper: 180.0}
+    max_joint_velocity_rad_s: 3.0
+    max_main_current_a: 5.0
+    workspace:
+      x_min: -0.63
+      x_max: 0.63
+      y_min: -0.63
+      y_max: 0.63
+      z_min: 0.0
+      z_max: 0.63
+      boundary_slow_zone_m: 0.05
+    estop_on_serial_loss: true
+    watchdog_timeout_sec: 0.6
+    startup_home_velocity_scale: 0.1

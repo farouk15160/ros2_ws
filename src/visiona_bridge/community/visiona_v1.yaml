@@ -1,0 +1,47 @@
+crl:
+  profile_id: "visiona_v1"
+  robot_name: "Visiona V1 Desktop Arm"
+  manufacturer: "Visiona Robotics"
+  version: "1.0"
+  test_status: "verified"
+  test_date: "2026-01-01"
+  contributor: "visiona"
+  downloads: 0
+
+robot:
+  name: "Visiona V1"
+  dof: 6
+  has_gripper: true
+
+hardware:
+  dof: 6
+  joint_types: [revolute, revolute, revolute, revolute, revolute, revolute]
+  type: "esp32_pca9685"
+  firmware: "visiona_packet_v5"
+  interface: "serial"
+
+kinematics:
+  dh_params:
+    - [0.0, 1.5708, 0.14, 0.0]
+    - [0.185, 0.0, 0.0, 0.0]
+    - [0.119, 0.0, 0.0, 0.0]
+    - [0.25, 0.0, -0.005, 0.0]
+  workspace:
+    x_bounds: [-0.63, 0.63]
+    y_bounds: [-0.63, 0.63]
+    z_bounds: [0.0, 0.63]
+    min_radius: 0.12
+
+moveit2:
+  recommended_ik_solver: "simple_ik"
+  recommended_planner: "ompl/RRTConnect"
+  group_name: "arm"
+  known_issues: []
+
+planning:
+  framework: "simple_ik"
+  fallback: "moveit2"
+
+calibration:
+  tcp_offset_standard: [0, 0, 0.25, 0, 0, 0]
+  joint_zero_procedure: "home_all_90deg"

@@ -11,7 +11,9 @@ File size: ~280 lines (target: < 300 lines)
 
 import rclpy
 from rclpy.node import Node
+import json
 import math
+from std_msgs.msg import String
 
 # Hardware layer
 from .hardware import PacketProtocol, SerialInterface, RobotHardware
@@ -141,12 +143,130 @@ class RobotArmBridge(Node):
         self.robot_publishers = RobotPublishers(self, self.deg_to_rad)
         self.robot_subscribers = RobotSubscribers(self, self)
         self.robot_services = RobotServices(self, self)
-        self.cartesian = CartesianInterface(self, self.get_logger())
         
         # Cartesian pose publisher timer
         self.create_timer(0.5, self._publish_cartesian_timer)
-        
-     
+
+        self._init_uraf_bridge()
+
+    def _init_uraf_bridge(self):
+        """Subscribe to URAF topics for GUI setup wizard."""
+        self._uraf_health = {"status": "starting"}
+        self._uraf_hardware_profile = {}
+
+        def on_health(msg: String):
+            try:
+                self._uraf_health = json.loads(msg.data)
+            except (json.JSONDecodeError, TypeError):
+                self._uraf_health = {"status": "unknown", "raw": msg.data}
+            if self.socketio:
+                self.socketio.emit("uraf_health", self._uraf_health)
+
+        def on_profile(msg: String):
+            try:
+                self._uraf_hardware_profile = json.loads(msg.data)
+            except (json.JSONDecodeError, TypeError):
+                self._uraf_hardware_profile = {}
+            if self.socketio:
+                self.socketio.emit("uraf_discovery", self._uraf_hardware_profile)
+
+        self.create_subscription(String, "/uraf/health", on_health, 10)
+        self.create_subscription(String, "/uraf/hardware_profile", on_profile, 10)
+        self.create_subscription(String, "/uraf/recovery/status", self._on_recovery, 10)
+        self.create_subscription(String, "/uraf/learning/stats", self._on_learning, 10)
+        self.create_subscription(String, "/uraf/twin/state", self._on_twin_state, 10)
+        self.create_subscription(String, "/uraf/plugins/status", self._on_plugins, 10)
+        self.create_subscription(String, "/uraf/community/catalog", self._on_community, 10)
+        self.create_subscription(String, "/uraf/community/match", self._on_community_match, 10)
+        self.create_subscription(String, "/uraf/safety/status", self._on_safety, 10)
+        self.create_subscription(String, "/uraf/safety/estop_command", self._on_safety_estop, 10)
+        self._uraf_recovery = {}
+        self._uraf_learning = {}
+        self._uraf_twin = {}
+        self._uraf_plugins = {}
+        self._uraf_community = {}
+        self._uraf_safety = {}
+        self._system_status_pub = self.create_publisher(String, "/visiona/system_status", 10)
+        self.create_timer(1.0, self._publish_system_status)
+
+    def _on_recovery(self, msg: String):
+        try:
+            self._uraf_recovery = json.loads(msg.data)
+        except (json.JSONDecodeError, TypeError):
+            self._uraf_recovery = {}
+        if self.socketio:
+            self.socketio.emit("uraf_recovery", self._uraf_recovery)
+
+    def _on_learning(self, msg: String):
+        try:
+            self._uraf_learning = json.loads(msg.data)
+        except (json.JSONDecodeError, TypeError):
+            self._uraf_learning = {}
+        if self.socketio:
+            self.socketio.emit("uraf_learning", self._uraf_learning)
+
+    def _on_twin_state(self, msg: String):
+        try:
+            self._uraf_twin = json.loads(msg.data)
+        except (json.JSONDecodeError, TypeError):
+            self._uraf_twin = {}
+        if self.socketio:
+            self.socketio.emit("uraf_twin", self._uraf_twin)
+
+    def _on_plugins(self, msg: String):
+        try:
+            self._uraf_plugins = json.loads(msg.data)
+        except (json.JSONDecodeError, TypeError):
+            self._uraf_plugins = {}
+        if self.socketio:
+            self.socketio.emit("uraf_plugins", self._uraf_plugins)
+
+    def _on_community(self, msg: String):
+        try:
+            self._uraf_community = json.loads(msg.data)
+        except (json.JSONDecodeError, TypeError):
+            self._uraf_community = {}
+        if self.socketio:
+            self.socketio.emit("uraf_community", self._uraf_community)
+
+    def _on_community_match(self, msg: String):
+        try:
+            data = json.loads(msg.data)
+        except (json.JSONDecodeError, TypeError):
+            data = {}
+        if self.socketio:
+            self.socketio.emit("uraf_community_match", data)
+
+    def _on_safety(self, msg: String):
+        try:
+            self._uraf_safety = json.loads(msg.data)
+        except (json.JSONDecodeError, TypeError):
+            self._uraf_safety = {}
+        if self.socketio:
+            self.socketio.emit("uraf_safety", self._uraf_safety)
+
+    def _on_safety_estop(self, msg: String):
+        if msg.data.strip().lower() == "trigger":
+            self.hardware.emergency_stop_active = True
+            self.get_logger().error("Safety monitor triggered E-Stop")
+            if self.socketio:
+                emit_log_message(self.socketio, "error", "Safety violation — E-Stop activated")
+            self.emit_full_status()
+
+    def _publish_system_status(self):
+        state = self._get_state()
+        payload = {
+            "is_connected": state.get("is_connected", False),
+            "emergency_stop": state.get("emergency_stop", False),
+            "simulation_mode": state.get("simulation_mode", False),
+            "main_current": state.get("main_current", 0.0),
+            "gripper_current": state.get("gripper_current", 0.0),
+            "jarvis_enabled": hasattr(self, "_jarvis_llm_status"),
+            "perception_ok": True,
+        }
+        msg = String()
+        msg.data = json.dumps(payload)
+        self._system_status_pub.publish(msg)
     
     # === Hardware callbacks ===
     

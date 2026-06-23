@@ -77,3 +77,23 @@ def emit_cartesian_pose(socketio, x: float, y: float, z: float):
             'z': round(z, 3)
         }
         socketio.emit('cartesian_pose', pose_data)
+
+
+def emit_jarvis_feedback(socketio, message: str):
+    if socketio:
+        socketio.emit('jarvis_feedback', {'message': message})
+
+
+def emit_jarvis_world_state(socketio, state_json: str):
+    if socketio:
+        socketio.emit('jarvis_world_state', state_json)
+
+
+def emit_jarvis_action_plan(socketio, plan_json: str):
+    if socketio:
+        socketio.emit('jarvis_action_plan', plan_json)
+
+
+def emit_llm_status(socketio, status: str):
+    if socketio:
+        socketio.emit('llm_status', {'status': status})

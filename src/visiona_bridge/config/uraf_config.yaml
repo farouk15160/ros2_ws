@@ -1,0 +1,111 @@
+# URAF Master Configuration ù Visiona Robotics Studio v1.0
+# Aligned with PLAN.md ù6.2.3. Edit here or use the Setup Wizard in the web GUI.
+
+uraf:
+  version: "1.0"
+  mode: "guided"  # auto | guided | expert
+
+robot:
+  name: "Visiona V1"
+  description: "6-DOF desktop arm with ESP32 MCU and RGB-D perception"
+  profile: "config/robots/visiona_v1.yaml"
+
+  interface:
+    type: "serial"
+    serial:
+      port: "/dev/ttyUSB0"
+      baudrate: 921600
+      protocol: "visiona_packet_v5"
+
+  kinematics:
+    dof: 6
+    type: "serial"
+    config: "config/kinematic_params.yaml"
+    home_position: [90.0, 90.0, 90.0, 90.0, 90.0, 0.0]
+
+  end_effector:
+    type: "gripper"
+    gripper_open_deg: 0.0
+    gripper_close_deg: 90.0
+    gripper_current_ma: 250.0
+
+planning:
+  framework: "simple_ik"
+  fallback: "moveit2"
+  collision_checking: true
+  octomap_topic: "/octomap_point_cloud_centers"
+
+perception:
+  enabled: true
+  camera_package: "ascamera"
+  camera_launch: "hp60c.launch.py"
+  mapping:
+    enabled: true
+    type: "octomap"
+    quality: "low"
+
+intelligence:
+  enabled: true
+  ollama_url: "http://localhost:11434"
+  planner_model: "mistral"
+  vision_model: "llava"
+  sam_checkpoint: "/home/farouk/mobile_sam.pt"
+
+gui:
+  port: 5000
+  theme: "studio_dark"
+  enable_3d_viewport: true
+
+safety:
+  collision_detection: true
+  estop_on_serial_loss: true
+  max_main_current_a: 5.0
+  monitor_rate_hz: 20.0
+  startup_auto: true
+  functions:
+    SF-01_joint_limits: true
+    SF-02_joint_velocity: true
+    SF-05_current_overload: true
+    SF-07_watchdog: true
+    SF-08_estop: true
+    SF-10_workspace: true
+    SF-11_sensor_loss: true
+  config: "config/safety_params.yaml"
+
+digital_twin:
+  enabled: true
+  simulator: "auto"  # auto | bridge_sim | rviz_only | gazebo
+  pre_validate: true
+  gate_motion: false
+
+community:
+  share_anonymous_profiles: false
+  library_path: "~/.visiona_bridge/community"
+  auto_lookup: true
+
+plugins:
+  auto_install_bundled: true
+  registry_path: "~/.visiona_bridge/plugins"
+
+self_healing:
+  enabled: true
+  joint_stale_sec: 2.0
+  recovery_cooldown_sec: 30.0
+  max_auto_attempts: 3
+  home_pose: {x: 0.0, y: 0.25, z: 0.35}
+
+learning:
+  enabled: true
+  record_executions: true
+  store_path: "~/.visiona_bridge/learning"
+
+multi_robot:
+  enabled: false
+  shared_planning_scene: false
+  coordination_strategy: "decoupled"
+  priority: ["visiona"]
+  robots:
+    - name: "visiona"
+      namespace: ""
+      config: "config/robots/visiona_v1.yaml"
+      base_frame_pose: {x: 0.0, y: 0.0, z: 0.0, roll: 0.0, pitch: 0.0, yaw: 0.0}

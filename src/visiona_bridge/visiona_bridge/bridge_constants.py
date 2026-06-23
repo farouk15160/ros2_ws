@@ -23,6 +23,10 @@ def get_data_dir():
     os.makedirs(data_dir, exist_ok=True)
     return data_dir
 
+def get_config_dir():
+    """URAF config store directory (~/.visiona_bridge)."""
+    return get_data_dir()
+
 def get_positions_file():
     """Get positions file path at runtime."""
     import os

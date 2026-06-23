@@ -70,5 +70,11 @@ def create_app(ros_node):
     
     # Initialize SocketIO with app
     socketio.init_app(app)
+
+    if ros_node:
+        from .jarvis_gui_bridge import JarvisGuiBridge
+        ros_node._jarvis_world_state = {}
+        ros_node._jarvis_llm_status = 'offline'
+        JarvisGuiBridge(ros_node, socketio)
     
     return app, socketio

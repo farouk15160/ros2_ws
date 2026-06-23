@@ -1,0 +1,28 @@
+crl:
+  profile_id: "generic_6dof_serial"
+  robot_name: "Generic 6-DOF Serial Arm"
+  manufacturer: "Community"
+  version: "0.1"
+  test_status: "experimental"
+  contributor: "uraf"
+  downloads: 0
+
+robot:
+  name: "Generic 6DOF"
+  dof: 6
+
+hardware:
+  dof: 6
+  joint_types: [revolute, revolute, revolute, revolute, revolute, revolute]
+  type: "serial"
+  interface: "serial"
+
+kinematics:
+  dh_params:
+    - [0.0, 1.5708, 0.1, 0.0]
+    - [0.2, 0.0, 0.0, 0.0]
+    - [0.15, 0.0, 0.0, 0.0]
+    - [0.2, 0.0, 0.0, 0.0]
+
+planning:
+  framework: "moveit2"

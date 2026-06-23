@@ -251,3 +251,227 @@ def register_routes(app, ros_node, cartesian_interface=None, socketio=None, node
         if ros_node and name:
             ros_node.delete_position(name)
         return jsonify({"status": "ok"})
+
+
+    #  JARVIS AI Routes 
+    @app.route('/api/jarvis_command', methods=['POST'])
+    def jarvis_command_api():
+        """Send a natural language command to the JARVIS LLM pipeline."""
+        try:
+            data = request.get_json(silent=True) or {}
+            command = data.get('command', '').strip()
+            if not command:
+                return jsonify({'status': 'error', 'message': 'No command provided'}), 400
+
+            if ros_node is None:
+                return jsonify({'status': 'error', 'message': 'ROS node not ready'}), 503
+
+            from std_msgs.msg import String as RosString
+            msg = RosString()
+            msg.data = command
+
+            if not hasattr(ros_node, '_jarvis_cmd_pub'):
+                import rclpy
+                ros_node._jarvis_cmd_pub = ros_node.create_publisher(
+                    RosString, '/jarvis/command', 10)
+
+            ros_node._jarvis_cmd_pub.publish(msg)
+
+            if logger:
+                logger.info(f'JARVIS command published: {command!r}')
+
+            return jsonify({'status': 'ok', 'command': command})
+        except Exception as e:
+            if logger:
+                logger.error(f'jarvis_command error: {e}')
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+
+    @app.route('/api/jarvis_status', methods=['GET'])
+    def jarvis_status_api():
+        """Return the current JARVIS LLM status."""
+        status = getattr(ros_node, '_jarvis_llm_status', 'unknown') if ros_node else 'offline'
+        world  = getattr(ros_node, '_jarvis_world_state', {}) if ros_node else {}
+        return jsonify({'status': status, 'world_model': world})
+
+    # ─── URAF / Kinematics API ───────────────────────────────────────────
+    from .kinematics_api import _load_kinematics
+
+    @app.route('/api/kinematics')
+    def kinematics_api():
+        return jsonify(_load_kinematics())
+
+    @app.route('/api/uraf/config')
+    def uraf_config_get():
+        from ..uraf.config_store import ConfigStore
+        from ament_index_python.packages import get_package_share_directory
+        import os
+        store = ConfigStore()
+        fallback = os.path.join(get_package_share_directory('visiona_bridge'), 'config', 'uraf_config.yaml')
+        return jsonify(store.load(fallback_path=fallback))
+
+    @app.route('/api/uraf/discovery', methods=['POST'])
+    def uraf_discovery_trigger():
+        if ros_node is None:
+            return jsonify({'status': 'error', 'message': 'ROS not ready'}), 503
+        from std_msgs.msg import String as RosString
+        if not hasattr(ros_node, '_discovery_trigger_pub'):
+            ros_node._discovery_trigger_pub = ros_node.create_publisher(
+                RosString, '/uraf/discovery/trigger', 10)
+        msg = RosString()
+        msg.data = 'run'
+        ros_node._discovery_trigger_pub.publish(msg)
+        return jsonify({'status': 'ok'})
+
+    @app.route('/api/uraf/health')
+    def uraf_health_get():
+        health = getattr(ros_node, '_uraf_health', {'status': 'unknown'}) if ros_node else {}
+        return jsonify(health)
+
+    @app.route('/api/uraf/generate_urdf', methods=['POST'])
+    def uraf_generate_urdf():
+        if ros_node is None:
+            return jsonify({'status': 'error', 'message': 'ROS not ready'}), 503
+        from std_msgs.msg import String as RosString
+        if not hasattr(ros_node, '_urdf_generate_pub'):
+            ros_node._urdf_generate_pub = ros_node.create_publisher(
+                RosString, '/uraf/generate_urdf', 10)
+        msg = RosString()
+        msg.data = 'generate'
+        ros_node._urdf_generate_pub.publish(msg)
+        return jsonify({'status': 'ok', 'message': 'URDF generation triggered'})
+
+    @app.route('/api/uraf/learning')
+    def uraf_learning_get():
+        stats = getattr(ros_node, '_uraf_learning', {}) if ros_node else {}
+        return jsonify(stats)
+
+    @app.route('/api/uraf/recovery')
+    def uraf_recovery_get():
+        recovery = getattr(ros_node, '_uraf_recovery', {}) if ros_node else {}
+        return jsonify(recovery)
+
+    @app.route('/api/uraf/twin')
+    def uraf_twin_get():
+        twin = getattr(ros_node, '_uraf_twin', {}) if ros_node else {}
+        return jsonify(twin)
+
+    @app.route('/api/uraf/twin/validate', methods=['POST'])
+    def uraf_twin_validate():
+        if ros_node is None:
+            return jsonify({'status': 'error', 'message': 'ROS not ready'}), 503
+        data = request.get_json(force=True, silent=True) or {}
+        from std_msgs.msg import String as RosString
+        if not hasattr(ros_node, '_twin_validate_pub'):
+            ros_node._twin_validate_pub = ros_node.create_publisher(
+                RosString, '/visiona/twin/validate_motion', 10)
+        import uuid
+        payload = {
+            'request_id': str(uuid.uuid4()),
+            'x': float(data.get('x', 0)),
+            'y': float(data.get('y', 0.25)),
+            'z': float(data.get('z', 0.35)),
+        }
+        msg = RosString()
+        msg.data = __import__('json').dumps(payload)
+        ros_node._twin_validate_pub.publish(msg)
+        return jsonify({'status': 'ok', 'request_id': payload['request_id']})
+
+    @app.route('/api/uraf/wizard')
+    def uraf_wizard_get():
+        from ..uraf.wizard_store import WizardStore
+        store = WizardStore()
+        return jsonify({'state': store.load()})
+
+    @app.route('/api/uraf/wizard', methods=['POST'])
+    def uraf_wizard_post():
+        from ..uraf.wizard_store import WizardStore
+        data = request.get_json(force=True, silent=True) or {}
+        store = WizardStore()
+        if 'step' in data and len(data) == 1:
+            state = store.advance(int(data['step']))
+        else:
+            state = store.update(data)
+        return jsonify({'status': 'ok', 'state': state})
+
+    @app.route('/api/uraf/wizard/reset', methods=['POST'])
+    def uraf_wizard_reset():
+        from ..uraf.wizard_store import WizardStore
+        store = WizardStore()
+        state = store.save(store.default_state())
+        return jsonify({'status': 'ok', 'state': state})
+
+    @app.route('/api/uraf/plugins')
+    def uraf_plugins_get():
+        plugins = getattr(ros_node, '_uraf_plugins', {}) if ros_node else {}
+        return jsonify(plugins)
+
+    @app.route('/api/uraf/plugins/install', methods=['POST'])
+    def uraf_plugins_install():
+        from ..uraf.plugin_registry import PluginRegistry
+        from ament_index_python.packages import get_package_share_directory
+        import os
+        data = request.get_json(force=True, silent=True) or {}
+        name = data.get('name', 'visiona_fal')
+        share = get_package_share_directory('visiona_bridge')
+        manifest = os.path.join(share, 'plugins', name, 'plugin.yaml')
+        reg = PluginRegistry()
+        try:
+            entry = reg.install_from_manifest(__import__('pathlib').Path(manifest))
+            return jsonify({'status': 'ok', 'plugin': entry})
+        except Exception as exc:
+            return jsonify({'status': 'error', 'message': str(exc)}), 400
+
+    @app.route('/api/uraf/community')
+    def uraf_community_get():
+        catalog = getattr(ros_node, '_uraf_community', {}) if ros_node else {}
+        return jsonify(catalog)
+
+    @app.route('/api/uraf/community/lookup', methods=['POST'])
+    def uraf_community_lookup():
+        if ros_node is None:
+            return jsonify({'status': 'error', 'message': 'ROS not ready'}), 503
+        data = request.get_json(force=True, silent=True) or {}
+        from std_msgs.msg import String as RosString
+        if not hasattr(ros_node, '_community_lookup_pub'):
+            ros_node._community_lookup_pub = ros_node.create_publisher(
+                RosString, '/uraf/community/lookup', 10)
+        msg = RosString()
+        msg.data = __import__('json').dumps(data)
+        ros_node._community_lookup_pub.publish(msg)
+        return jsonify({'status': 'ok'})
+
+    @app.route('/api/uraf/safety')
+    def uraf_safety_get():
+        safety = getattr(ros_node, '_uraf_safety', {}) if ros_node else {}
+        return jsonify(safety)
+
+    @app.route('/api/uraf/safety/command', methods=['POST'])
+    def uraf_safety_command():
+        if ros_node is None:
+            return jsonify({'status': 'error', 'message': 'ROS not ready'}), 503
+        data = request.get_json(force=True, silent=True) or {}
+        cmd = data.get('command', 'arm')
+        from std_msgs.msg import String as RosString
+        if not hasattr(ros_node, '_safety_cmd_pub'):
+            ros_node._safety_cmd_pub = ros_node.create_publisher(
+                RosString, '/uraf/safety/command', 10)
+        msg = RosString()
+        msg.data = str(cmd)
+        ros_node._safety_cmd_pub.publish(msg)
+        return jsonify({'status': 'ok', 'command': cmd})
+
+    #  JARVIS SocketIO handlers 
+    if socketio:
+        @socketio.on('jarvis_command')
+        def handle_jarvis_command(data):
+            command = data.get('command', '').strip()
+            if not command or ros_node is None:
+                return
+            from std_msgs.msg import String as RosString
+            if not hasattr(ros_node, '_jarvis_cmd_pub'):
+                ros_node._jarvis_cmd_pub = ros_node.create_publisher(
+                    RosString, '/jarvis/command', 10)
+            msg = RosString(); msg.data = command
+            ros_node._jarvis_cmd_pub.publish(msg)
+            if logger:
+                logger.info(f'JARVIS socket command: {command!r}')

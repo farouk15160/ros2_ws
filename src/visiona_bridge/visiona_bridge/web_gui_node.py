@@ -67,7 +67,7 @@ def main(args=None):
     
     print("\n\033[92m============================================================\033[0m")
     if use_gui:
-        print("🤖 \033[1mRobot Arm Bridge V5.0 (Restructured) with Web GUI\033[0m")
+        print("🤖 \033[1mVisiona Robotics Studio v6.0\033[0m")
         print(f"       Static files: \033[33m{static_dir}\033[0m")
         print("       Open browser: \033[4mhttp://0.0.0.0:5000\033[0m")
     else:

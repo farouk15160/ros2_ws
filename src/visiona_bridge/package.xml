@@ -2,10 +2,10 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>visiona_bridge</name>
-  <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <version>6.0.0</version>
+  <description>Visiona Robotics Studio — ROS 2 bridge, URAF foundation, JARVIS AI pipeline, and web GUI for the Visiona 6-DOF arm.</description>
   <maintainer email="farouk15160@gmail.com">farouk</maintainer>
-  <license>TODO: License declaration</license>
+  <license>MIT</license>
 
   <depend>rclpy</depend>
   <depend>sensor_msgs</depend>
@@ -13,10 +13,14 @@
   <depend>std_srvs</depend>
   <depend>trajectory_msgs</depend>
   <depend>geometry_msgs</depend>
+  <depend>visualization_msgs</depend>
   <depend>moveit_msgs</depend>
   <depend>shape_msgs</depend>
   <depend>tf2_ros</depend>
+  <exec_depend>gazebo_ros</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>octomap_server</exec_depend>
+  <exec_depend>cv_bridge</exec_depend>
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>

@@ -21,8 +21,21 @@ def generate_launch_description():
     viz_arg = DeclareLaunchArgument(
         'viz',
         default_value='none',
-        choices=['none', 'rviz'],
-        description='Visualization mode: none, rviz'
+        choices=['none', 'rviz', 'moveit'],
+        description='Visualization: none, rviz (bridge), moveit (MoveIt RViz)'
+    )
+    
+    planning_arg = DeclareLaunchArgument(
+        'planning',
+        default_value='auto',
+        choices=['simple_ik', 'moveit', 'auto'],
+        description='Motion planning: simple_ik, moveit, or auto (MoveIt if available)'
+    )
+
+    twin_arg = DeclareLaunchArgument(
+        'twin',
+        default_value='true',
+        description='Enable digital twin pre-execution validation'
     )
     
     camera_arg = DeclareLaunchArgument('camera', default_value='false',
@@ -30,12 +43,17 @@ def generate_launch_description():
     mapping_arg = DeclareLaunchArgument('mapping', default_value='low',
                                          choices=['low', 'high'],
                                          description='Mapping quality: low (2cm, fast) or high (5mm, accurate)')
+    jarvis_arg = DeclareLaunchArgument('jarvis', default_value='false',
+                                        description='Launch JARVIS AI pipeline (requires Ollama)')
     
     mode = LaunchConfiguration('mode')
     gui = LaunchConfiguration('gui')
     viz = LaunchConfiguration('viz')
     camera = LaunchConfiguration('camera')
     mapping_quality = LaunchConfiguration('mapping')
+    jarvis = LaunchConfiguration('jarvis')
+    planning = LaunchConfiguration('planning')
+    twin = LaunchConfiguration('twin')
     
     # Path to Xacro file
     xacro_file = PathJoinSubstitution([visiona_bridge_share, 'urdf', 'visiona.urdf.xacro'])
@@ -306,6 +324,103 @@ def generate_launch_description():
     )
     
     # ==============================================================================
+    # JARVIS AI pipeline (optional)
+    # ==============================================================================
+    jarvis_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            PathJoinSubstitution([visiona_bridge_share, 'launch', 'llm_control.launch.py'])
+        ]),
+        launch_arguments={'planning_mode': planning}.items(),
+        condition=IfCondition(jarvis),
+    )
+
+    uraf_discovery_node = Node(
+        package='visiona_bridge',
+        executable='uraf_hardware_discovery',
+        name='uraf_hardware_discovery',
+        output='screen',
+    )
+
+    uraf_self_healing_node = Node(
+        package='visiona_bridge',
+        executable='uraf_self_healing',
+        name='uraf_self_healing',
+        output='screen',
+    )
+
+    uraf_learning_node = Node(
+        package='visiona_bridge',
+        executable='uraf_learning_agent',
+        name='uraf_learning_agent',
+        output='screen',
+    )
+
+    uraf_multi_robot_node = Node(
+        package='visiona_bridge',
+        executable='uraf_multi_robot_coordinator',
+        name='uraf_multi_robot_coordinator',
+        output='screen',
+    )
+
+    uraf_urdf_generator_node = Node(
+        package='visiona_bridge',
+        executable='uraf_urdf_generator',
+        name='uraf_urdf_generator',
+        output='screen',
+    )
+
+    uraf_plugin_manager_node = Node(
+        package='visiona_bridge',
+        executable='uraf_plugin_manager',
+        name='uraf_plugin_manager',
+        output='screen',
+    )
+
+    uraf_community_library_node = Node(
+        package='visiona_bridge',
+        executable='uraf_community_library',
+        name='uraf_community_library',
+        output='screen',
+    )
+
+    uraf_safety_monitor_node = Node(
+        package='visiona_bridge',
+        executable='uraf_safety_monitor',
+        name='uraf_safety_monitor',
+        output='screen',
+        parameters=[PathJoinSubstitution([visiona_bridge_share, 'config', 'safety_params.yaml'])],
+    )
+
+    moveit_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            PathJoinSubstitution([visiona_bridge_share, 'launch', 'moveit_control.launch.py'])
+        ]),
+        launch_arguments={'viz': viz}.items(),
+        condition=IfCondition(PythonExpression([
+            "'", planning, "' == 'moveit' or '", planning, "' == 'auto'"
+        ])),
+    )
+
+    digital_twin_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            PathJoinSubstitution([visiona_bridge_share, 'launch', 'digital_twin.launch.py'])
+        ]),
+        launch_arguments={
+            'twin_backend': PythonExpression([
+                "'gazebo' if '", mode, "' == 'gazebo' else 'bridge_sim'"
+            ]),
+        }.items(),
+        condition=IfCondition(twin),
+    )
+
+    gazebo_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            PathJoinSubstitution([visiona_bridge_share, 'launch', 'gazebo_sim.launch.py'])
+        ]),
+        condition=LaunchConfigurationEquals('mode', 'gazebo'),
+    )
+
+    # ==============================================================================
     # Launch Description - Combine all nodes
     # ==============================================================================
     
@@ -316,6 +431,9 @@ def generate_launch_description():
         viz_arg,  # Visualization option
         camera_arg,
         mapping_arg,
+        jarvis_arg,
+        planning_arg,
+        twin_arg,
         
         # Core nodes
         robot_state_publisher,
@@ -343,5 +461,27 @@ def generate_launch_description():
         octomap_server,      # Voxel-based occupancy grid
         rtabmap_node,        # Colored RGB point cloud SLAM
         colored_map_node,    # Photo-realistic colored point cloud accumulator
+
+        # JARVIS AI (jarvis:=true)
+        jarvis_launch,
+
+        # URAF foundation agents (always on)
+        uraf_discovery_node,
+        uraf_self_healing_node,
+        uraf_learning_node,
+        uraf_multi_robot_node,
+        uraf_urdf_generator_node,
+        uraf_plugin_manager_node,
+        uraf_community_library_node,
+        uraf_safety_monitor_node,
+
+        # MoveIt (planning:=moveit or auto)
+        moveit_launch,
+
+        # Digital Twin (twin:=true)
+        digital_twin_launch,
+
+        # Gazebo (mode:=gazebo)
+        gazebo_launch,
         
     ])

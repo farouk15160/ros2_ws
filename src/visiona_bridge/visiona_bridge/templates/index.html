@@ -3,482 +3,49 @@
 
 <head>
   <meta charset="UTF-8" />
-  <title>Robot Arm Control V4.3 (Lite)</title>
-  <style>
-    :root {
-      --bg-color: #1a1a1d;
-      --panel-color: #2c2f33;
-      --text-color: #c3c3c3;
-      --heading-color: #ffffff;
-      --border-color: #4f545c;
-      --input-bg-color: #23272a;
-      --accent-color: #7289da;
-      --accent-hover: #677bc4;
-      --danger-color: #f04747;
-      --danger-hover: #d84040;
-      --success-color: #43b581;
-      --info-color: #3498db;
-      --warn-color: #f1c40f;
-    }
-    
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      width: 100%;
-      min-height: 100%;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-        "Helvetica Neue", Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      padding: 20px;
-    }
-
-    .container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      width: 100%;
-      max-width: 1400px;
-    }
-
-    .panel {
-      background-color: var(--panel-color);
-      padding: 25px;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-      margin: 10px;
-    }
-
-    h2 {
-      margin-top: 0;
-      color: var(--heading-color);
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 10px;
-    }
-
-    hr {
-      border: none;
-      border-top: 1px solid var(--border-color);
-      margin: 20px 0;
-    }
-
-    .control-group,
-    .status-item {
-      margin-bottom: 20px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 500;
-    }
-
-    input[type="number"],
-    input[type="text"],
-    input[type="color"],
-    select {
-      width: 80px;
-      text-align: right;
-      border: 1px solid var(--border-color);
-      background-color: var(--input-bg-color);
-      color: var(--text-color);
-      border-radius: 4px;
-      padding: 8px;
-    }
-
-    input[type="color"] {
-      padding: 4px;
-      height: 38px;
-    }
-
-    input[type="text"] {
-      text-align: left;
-      width: 150px;
-    }
-
-    select {
-      width: 180px;
-      text-align: left;
-    }
-
-    .value-display {
-      font-weight: bold;
-      color: var(--accent-color);
-      margin-left: 10px;
-    }
-
-    button {
-      background-color: var(--accent-color);
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 1em;
-      font-weight: 500;
-      transition: background-color 0.2s;
-      margin-top: 5px;
-      margin-right: 5px;
-    }
-
-    button:hover {
-      background-color: var(--accent-hover);
-    }
-
-    button:disabled {
-      background-color: #555;
-      cursor: not-allowed;
-      opacity: 0.7;
-    }
-
-    .btn-danger {
-      background-color: var(--danger-color) !important;
-    }
-
-    .btn-danger:hover {
-      background-color: var(--danger-hover) !important;
-    }
-
-    .btn-success {
-      background-color: var(--success-color);
-    }
-
-    .btn-success:hover {
-      background-color: #3aa170;
-    }
-
-    .btn-warn {
-      background-color: var(--warn-color);
-      color: #333;
-    }
-
-    .btn-warn:hover {
-      background-color: #d8ae0a;
-    }
-
-    .btn-reconnect {
-      background-color: var(--warn-color);
-      color: #333;
-    }
-
-    .btn-reconnect:hover {
-      background-color: #d8ae0a;
-    }
-
-    .status-value {
-      font-family: "Courier New", Courier, monospace;
-      background-color: var(--input-bg-color);
-      padding: 5px 8px;
-      border-radius: 4px;
-      border: 1px solid var(--border-color);
-    }
-
-    .status-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px 20px;
-    }
-
-    .status-box {
-      padding: 15px;
-      border-radius: 5px;
-      text-align: center;
-      font-weight: bold;
-      color: white;
-    }
-
-    .status-ok {
-      background-color: var(--success-color);
-    }
-
-    .status-warn {
-      background-color: var(--danger-color);
-    }
-
-    .btn-group {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    input[type="range"] {
-      -webkit-appearance: none;
-      width: 100%;
-      height: 8px;
-      background: var(--input-bg-color);
-      border-radius: 5px;
-      outline: none;
-      cursor: pointer;
-      border: 1px solid var(--border-color);
-    }
-
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 20px;
-      height: 20px;
-      background: var(--accent-color);
-      border-radius: 50%;
-      cursor: pointer;
-    }
-
-    .sequence-list,
-    .positions-list {
-      max-height: 200px;
-      overflow-y: auto;
-      background-color: var(--input-bg-color);
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      padding: 10px;
-      margin-top: 10px;
-      font-family: monospace;
-      font-size: 0.9em;
-    }
-
-    .sequence-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 5px 0;
-      border-bottom: 1px solid var(--border-color);
-      gap: 10px;
-    }
-
-    .sequence-item:last-child {
-      border-bottom: none;
-    }
-
-    .sequence-item span {
-      flex-grow: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 0.9em;
-    }
-
-    .sequence-item button {
-      padding: 3px 8px;
-      font-size: 0.8em;
-      flex-shrink: 0;
-    }
-
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 50px;
-      height: 24px;
-    }
-
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #555;
-      transition: 0.4s;
-    }
-
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: 0.4s;
-    }
-
-    input:checked+.slider {
-      background-color: var(--success-color);
-    }
-
-    input:checked+.slider:before {
-      transform: translateX(26px);
-    }
-
-    .slider.round {
-      border-radius: 24px;
-    }
-
-    .slider.round:before {
-      border-radius: 50%;
-    }
-
-    .config-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 5px 10px;
-    }
-
-    .config-grid input {
-      width: 100%;
-      padding: 5px;
-      font-size: 0.9em;
-    }
-
-    .grid-header {
-      font-weight: bold;
-      font-size: 0.9em;
-      text-align: center;
-    }
-
-    .tab-bar {
-      overflow: hidden;
-      background-color: var(--panel-color);
-      border-radius: 8px;
-      width: 100%;
-      max-width: 1400px;
-      margin-bottom: 10px;
-    }
-
-    .tab-button {
-      background-color: inherit;
-      float: left;
-      border: none;
-      outline: none;
-      cursor: pointer;
-      padding: 14px 20px;
-      transition: 0.3s;
-      font-size: 1.1em;
-      color: var(--text-color);
-      font-weight: 500;
-    }
-
-    .tab-button:hover {
-      background-color: var(--border-color);
-    }
-
-    .tab-button.active {
-      background-color: var(--accent-color);
-      color: white;
-    }
-
-    .tab-content {
-      width: 100%;
-      max-width: 1400px;
-    }
-
-    .tab-pane {
-      display: none;
-      width: 100%;
-      animation: 0.5s ease 0s 1 fadeIn;
-    }
-
-    .tab-pane.active {
-      display: block;
-    }
-
-    @keyframes fadeIn {
-      0% {
-        opacity: 0;
-      }
-
-      100% {
-        opacity: 1;
-      }
-    }
-
-    .tab-layout {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-start;
-      gap: 10px;
-    }
-
-    .tab-layout .panel {
-      margin: 0;
-    }
-
-    .panel-col-1-3 {
-      flex: 1 1 350px;
-      min-width: 350px;
-    }
-
-    .panel-col-2-3 {
-      flex: 2 1 600px;
-      min-width: 400px;
-      position: relative;
-    }
-
-    .panel-full {
-      flex: 1 1 100%;
-    }
-
-    #log-panel {
-      width: 100%;
-      max-width: 1400px;
-      margin-top: 20px;
-    }
-
-    #log-box {
-      background-color: var(--input-bg-color);
-      border: 1px solid var(--border-color);
-      border-radius: 5px;
-      height: 150px;
-      overflow-y: scroll;
-      padding: 10px;
-      font-family: monospace;
-      font-size: 0.9em;
-    }
-
-    #log-box p {
-      margin: 0 0 5px 0;
-    }
-
-    .log-info {
-      color: var(--info-color);
-    }
-
-    .log-warn {
-      color: var(--warn-color);
-    }
-
-    .log-error {
-      color: var(--danger-color);
-    }
-
-    .log-success {
-      color: var(--success-color);
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visiona Robotics Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/studio.css') }}" />
 </head>
 
 <body>
-  <div class="tab-bar">
-    <button class="tab-button active" onclick="openTab(event, 'tab-control')">
-      🤖 Control
-    </button>
-    <button class="tab-button" onclick="openTab(event, 'tab-sequencer')">
-      📊 Sequencer
-    </button>
+  <div class="studio-app">
+    <header class="studio-topbar">
+      <div class="studio-brand">
+        <div class="studio-logo"></div>
+        <div>
+          <h1>Visiona Robotics Studio</h1>
+          <span>Universal Robot Control · v6.0</span>
+        </div>
+      </div>
+      <div class="studio-topbar-status">
+        <div id="topbar-connection" class="topbar-chip warn">
+          <span class="dot"></span>
+          <span id="topbar-conn-text">Offline</span>
+        </div>
+        <div id="topbar-estop" class="topbar-chip ok">
+          <span class="dot"></span>
+          <span id="topbar-estop-text">E-Stop OK</span>
+        </div>
+        <div class="topbar-chip">
+          <span id="topbar-cart">X 0.000 · Y 0.000 · Z 0.000</span>
+        </div>
+        <span class="studio-clock" id="studio-clock">--:--:--</span>
+      </div>
+    </header>
 
-    <button class="tab-button" onclick="openTab(event, 'tab-settings')">
-      ⚙️ Settings
-    </button>
-  </div>
+    <nav class="studio-sidebar">
+      <button class="nav-btn active" onclick="openTab(event, 'tab-control')" title="Robot Control">🤖</button>
+      <button class="nav-btn" onclick="openTab(event, 'tab-sequencer')" title="Sequencer">📊</button>
+      <button class="nav-btn" onclick="openTab(event, 'tab-jarvis')" title="JARVIS AI">🧠</button>
+      <button class="nav-btn" onclick="openTab(event, 'tab-setup')" title="Setup Wizard">🔧</button>
+      <button class="nav-btn" onclick="openTab(event, 'tab-settings')" title="Settings">⚙️</button>
+    </nav>
 
-  <div class="tab-content">
+    <main class="studio-main">
+      <div class="tab-content">
     <div id="tab-control" class="tab-pane active">
       <div class="tab-layout">
         <div class="panel panel-col-1-3">
@@ -540,9 +107,11 @@
 
         <div class="panel panel-col-2-3">
           <h2>Controls</h2>
+          <div id="robot-viewport" class="viewport-card" style="margin-bottom:16px; min-height:280px; padding:0; overflow:hidden;">
+          </div>
 
           <!-- Cartesian Control Panel -->
-          <div class="control-group" style="background-color: #23272a; padding: 10px; border-radius: 5px;">
+          <div class="control-group xyz-section">
             <label>Cartesian Control (XYZ)</label>
             <div style="text-align: center; margin-bottom: 10px; font-family: monospace; font-size: 1.1em;">
               X: <span id="cart-x" style="color: var(--accent-color)">0.000</span> |
@@ -712,7 +281,197 @@
     </div>
 
 
+    <!-- ================================================================ -->
+    <!-- JARVIS AI TAB                                                     -->
+    <!-- ================================================================ -->
+    <div id="tab-jarvis" class="tab-pane">
+      <div class="tab-layout">
 
+        <!-- Left panel: Chat feed + command input -->
+        <div class="panel panel-col-2-3" style="min-width:420px">
+          <h2>🧠 JARVIS – Natural Language Control</h2>
+
+          <!-- LLM Status badge -->
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+            <div id="llm-status-dot" style="
+              width:12px; height:12px; border-radius:50%;
+              background:#555; flex-shrink:0;
+              transition: background 0.4s;"></div>
+            <span id="llm-status-text" style="font-size:0.9em; color:#aaa;">
+              LLM Status: unknown
+            </span>
+          </div>
+
+          <!-- Chat feed -->
+          <div id="jarvis-chat" style="
+            background: var(--input-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            height: 340px;
+            overflow-y: auto;
+            padding: 14px;
+            font-size: 0.93em;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+          ">
+            <div class="jarvis-msg jarvis-sys">🧠 JARVIS chat feed — send a command below.</div>
+          </div>
+
+          <!-- Input row -->
+          <div style="display:flex; gap:8px; margin-top:10px;">
+            <input type="text" id="jarvis-input"
+              placeholder="e.g. grab the red cup …"
+              style="flex:1; width:auto; font-size:1em; padding:10px;"
+              onkeydown="if(event.key==='Enter') sendJarvisCommand()" />
+            <button onclick="sendJarvisCommand()" id="jarvis-send-btn"
+              style="background: linear-gradient(135deg,#667eea,#764ba2);
+                     padding:10px 18px; font-weight:bold;">
+              Send ▶
+            </button>
+          </div>
+
+          <!-- Quick actions -->
+          <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+            <button class="jarvis-quick" onclick="jarvisQuick('scan the scene')" style="font-size:0.8em; padding:5px 10px;">📷 Scan</button>
+            <button class="jarvis-quick" onclick="jarvisQuick('go home')"         style="font-size:0.8em; padding:5px 10px;">🏠 Home</button>
+            <button class="jarvis-quick" onclick="jarvisQuick('open the gripper')" style="font-size:0.8em; padding:5px 10px;">✋ Open</button>
+            <button class="jarvis-quick" onclick="jarvisQuick('close the gripper')" style="font-size:0.8em; padding:5px 10px;">✊ Close</button>
+            <button class="jarvis-quick" onclick="jarvisQuick('what do you see?')" style="font-size:0.8em; padding:5px 10px;">👁 What do you see?</button>
+          </div>
+        </div>
+
+        <!-- Right panel: World model + detected objects -->
+        <div class="panel panel-col-1-3" style="min-width:280px;">
+          <h2>🌍 World Model</h2>
+
+          <div style="font-size:0.8em; color:#888; margin-bottom:8px;">
+            Objects detected by the perception pipeline
+          </div>
+
+          <div id="jarvis-world" style="
+            background: var(--input-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            min-height: 180px;
+            max-height: 320px;
+            overflow-y: auto;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.85em;
+          ">
+            <span style="color:#555;">No objects detected yet.<br>Send a 'scan' command.</span>
+          </div>
+
+          <h3 style="margin-top:16px; font-size:1em;">📋 Last Action Plan</h3>
+          <pre id="jarvis-plan" style="
+            background: var(--input-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 0.8em;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            max-height: 180px;
+            overflow-y: auto;
+          ">—</pre>
+        </div>
+
+      </div>
+    </div>
+    <!-- end tab-jarvis -->
+
+    <div id="tab-setup" class="tab-pane">
+      <div class="wizard-container">
+        <div class="wizard-header">
+          <h2>URAF Setup Wizard</h2>
+          <p class="wizard-subtitle">Universal Robot Arm Foundation — guided setup (PLAN §17)</p>
+          <div class="wizard-progress"><div id="wizard-progress-bar" class="wizard-progress-fill"></div></div>
+          <div id="wizard-step-nav" class="wizard-step-nav"></div>
+          <h3 id="wizard-step-title" class="wizard-step-title">Welcome — Select setup mode</h3>
+        </div>
+
+        <div id="wizard-panel-welcome" class="wizard-panel">
+          <div class="wizard-card">
+            <label>Setup Mode</label>
+            <select id="uraf-mode" class="wizard-select">
+              <option value="auto">Auto Setup (Recommended)</option>
+              <option value="guided" selected>Guided Wizard</option>
+              <option value="expert">Expert Mode</option>
+            </select>
+            <p class="wizard-hint">Auto runs discovery, community lookup, URDF generation, and health check.</p>
+          </div>
+        </div>
+
+        <div id="wizard-panel-hardware" class="wizard-panel" style="display:none;">
+          <div class="wizard-card">
+            <h4>Detected Interfaces</h4>
+            <div id="wizard-hardware-list">Press Continue to scan serial ports and ROS topics.</div>
+            <button onclick="runDiscovery()" style="margin-top:12px;">Scan Again</button>
+          </div>
+        </div>
+
+        <div id="wizard-panel-discovery" class="wizard-panel" style="display:none;">
+          <div id="wizard-discovery-log" class="sequence-list" style="min-height:180px;font-family:monospace;font-size:0.85em;">
+            <div style="color:#555;">Discovery in progress…</div>
+          </div>
+          <div id="uraf-discovery-log" style="display:none;"></div>
+        </div>
+
+        <div id="wizard-panel-confirm" class="wizard-panel" style="display:none;">
+          <div class="wizard-card">
+            <h4>⚠ Confirm Robot Profile</h4>
+            <pre id="wizard-confirm-body" style="min-height:120px;">Waiting for community library match…</pre>
+            <button onclick="fetch('/api/uraf/community/lookup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile_id:'visiona_v1'})})">Lookup Visiona V1</button>
+          </div>
+        </div>
+
+        <div id="wizard-panel-visualize" class="wizard-panel" style="display:none;">
+          <div class="wizard-card">
+            <h4>Live 3D Model</h4>
+            <div id="wizard-viewport" class="viewport-card"><div id="robot-viewport-wizard"></div></div>
+            <pre id="uraf-health-display" style="margin-top:12px;min-height:60px;font-size:0.82em;">—</pre>
+          </div>
+        </div>
+
+        <div id="wizard-panel-calibrate" class="wizard-panel" style="display:none;">
+          <div class="wizard-card">
+            <h4>Calibration</h4>
+            <p>Step 1: Mount calibration pattern in camera view</p>
+            <p>Step 2: Generate URDF from discovered profile</p>
+            <button onclick="generateUrafUrdf()">Generate URDF</button>
+            <pre id="uraf-twin-display" style="margin-top:12px;min-height:50px;font-size:0.82em;">—</pre>
+          </div>
+        </div>
+
+        <div id="wizard-panel-complete" class="wizard-panel" style="display:none;">
+          <div class="wizard-card wizard-success">
+            <h4>✅ Setup Complete</h4>
+            <p>Robot is configured. Open Control or JARVIS tabs to operate.</p>
+            <pre id="uraf-learning-display" style="font-size:0.82em;min-height:40px;">—</pre>
+          </div>
+        </div>
+
+        <div class="wizard-expert-panel">
+          <details>
+            <summary>Expert: Agents &amp; Plugins</summary>
+            <pre id="uraf-recovery-display" style="font-size:0.82em;min-height:40px;">—</pre>
+            <pre id="uraf-plugins-display" style="font-size:0.82em;min-height:40px;margin-top:8px;">—</pre>
+            <pre id="uraf-community-display" style="font-size:0.82em;min-height:40px;margin-top:8px;">—</pre>
+            <pre id="uraf-safety-display" style="font-size:0.82em;min-height:40px;margin-top:8px;">—</pre>
+            <button onclick="loadUrafConfig()">Load Config</button>
+            <button onclick="validateTwinMotion()">Test Twin</button>
+          </details>
+        </div>
+
+        <div class="wizard-actions">
+          <button onclick="wizardBack()" class="wizard-btn-secondary">← Back</button>
+          <button onclick="wizardReset()" class="wizard-btn-secondary">Reset</button>
+          <button onclick="wizardNext()" class="wizard-btn-primary">Continue →</button>
+        </div>
+      </div>
+    </div>
 
     <div id="tab-settings" class="tab-pane">
       <div class="tab-layout">
@@ -780,14 +539,22 @@
         </div>
       </div>
     </div>
-  </div>
+      </div>
+    </main>
 
-  <div class="panel" id="log-panel">
-    <h2>Event Log</h2>
-    <div id="log-box"></div>
+    <footer class="studio-console">
+      <div class="panel" id="log-panel">
+        <h2>Event Log</h2>
+        <div id="log-box"></div>
+      </div>
+    </footer>
   </div>
 
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="{{ url_for('static', filename='js/viewport.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/wizard.js') }}"></script>
 
   <script>
     // --- (JavaScript: Globals) ---
@@ -807,7 +574,7 @@
     let isGuiInitialized = false;
     let isPlayingSequence = false;
 
-    // Placeholder to prevent errors in existing logic
+    // Placeholder until Three.js viewport loads
     window.updateRobotModel = (anglesRad) => { };
 
     let socket = null;
@@ -815,21 +582,25 @@
     document.addEventListener("DOMContentLoaded", () => {
       initializeGui();
       connectWebSocket();
+      setInterval(() => {
+        const el = document.getElementById("studio-clock");
+        if (el) el.textContent = new Date().toLocaleTimeString();
+      }, 1000);
     });
 
     // --- Tab switching function ---
     function openTab(evt, tabName) {
-      let i, tabcontent, tablinks;
-      tabcontent = document.getElementsByClassName("tab-pane");
-      for (i = 0; i < tabcontent.length; i++) {
-        tabcontent[i].style.display = "none";
+      document.querySelectorAll(".tab-pane").forEach((pane) => {
+        pane.style.display = "none";
+        pane.classList.remove("active");
+      });
+      document.querySelectorAll(".nav-btn").forEach((btn) => btn.classList.remove("active"));
+      const pane = document.getElementById(tabName);
+      if (pane) {
+        pane.style.display = "block";
+        pane.classList.add("active");
       }
-      tablinks = document.getElementsByClassName("tab-button");
-      for (i = 0; i < tablinks.length; i++) {
-        tablinks[i].className = tablinks[i].className.replace(" active", "");
-      }
-      document.getElementById(tabName).style.display = "block";
-      if (evt) evt.currentTarget.className += " active";
+      if (evt && evt.currentTarget) evt.currentTarget.classList.add("active");
     }
 
     function connectWebSocket() {
@@ -885,11 +656,107 @@
         document.getElementById('cart-x').innerText = data.x.toFixed(3);
         document.getElementById('cart-y').innerText = data.y.toFixed(3);
         document.getElementById('cart-z').innerText = data.z.toFixed(3);
+        const tb = document.getElementById('topbar-cart');
+        if (tb) {
+          tb.textContent = `X ${data.x.toFixed(3)} · Y ${data.y.toFixed(3)} · Z ${data.z.toFixed(3)}`;
+        }
       });
 
+      socket.on('llm_status', (data) => {
+        updateLlmStatus(data.status || data);
+      });
 
+      socket.on('jarvis_feedback', (data) => {
+        const msg = data.message || data;
+        const type = msg.startsWith('❌') ? 'error'
+                   : msg.startsWith('⚠️') ? 'warn'
+                   : 'jarvis';
+        jarvisAppendMsg(type, msg);
+      });
 
+      socket.on('jarvis_world_state', (data) => {
+        const worldDiv = document.getElementById('jarvis-world');
+        if (!worldDiv) return;
+        try {
+          const world = typeof data === 'string' ? JSON.parse(data) : data;
+          const keys = Object.keys(world);
+          if (keys.length === 0) {
+            worldDiv.innerHTML = '<span style="color:#555;">No objects detected.</span>';
+            return;
+          }
+          worldDiv.innerHTML = keys.map(k => {
+            const o = world[k];
+            const p = o.position || {};
+            return `<div style="padding:5px 0; border-bottom:1px solid #333;">
+              <b style="color:#00ffae;">${o.name}</b>
+              <span style="color:#999; float:right;">${o.age_sec}s ago</span><br>
+              <span style="color:#ccc; font-size:0.8em;">
+                x=${p.x?.toFixed(3)}  y=${p.y?.toFixed(3)}  z=${p.z?.toFixed(3)}
+              </span>
+            </div>`;
+          }).join('');
+        } catch (e) { worldDiv.textContent = String(data); }
+      });
 
+      socket.on('jarvis_action_plan', (data) => {
+        const planPre = document.getElementById('jarvis-plan');
+        if (!planPre) return;
+        try {
+          const plan = typeof data === 'string' ? JSON.parse(data) : data;
+          planPre.textContent = JSON.stringify(plan, null, 2);
+          jarvisAppendMsg('jarvis', '📋 Plan: ' + (plan.reasoning || JSON.stringify(plan.actions)));
+        } catch (e) { planPre.textContent = String(data); }
+      });
+
+      socket.on('uraf_discovery', (data) => {
+        renderDiscovery(data);
+        if (typeof onUrafDiscovery === 'function') onUrafDiscovery(data);
+      });
+
+      socket.on('uraf_community_match', (data) => {
+        const el = document.getElementById('uraf-community-display');
+        if (el) el.textContent = JSON.stringify(data, null, 2);
+        if (typeof onUrafCommunityMatch === 'function') onUrafCommunityMatch(data);
+      });
+
+      socket.on('uraf_plugins', (data) => {
+        const el = document.getElementById('uraf-plugins-display');
+        if (el) el.textContent = JSON.stringify(data, null, 2);
+      });
+
+      socket.on('uraf_safety', (data) => {
+        const el = document.getElementById('uraf-safety-display');
+        if (el) el.textContent = JSON.stringify(data, null, 2);
+        const topEstop = document.getElementById('topbar-estop');
+        const topEstopText = document.getElementById('topbar-estop-text');
+        if (topEstop && data.estop_active) {
+          topEstop.className = 'topbar-chip danger';
+          if (topEstopText) topEstopText.textContent = 'E-Stop ACTIVE';
+        } else if (topEstop && data.operational) {
+          topEstop.className = 'topbar-chip ok';
+          if (topEstopText) topEstopText.textContent = 'Safety OK';
+        }
+      });
+
+      socket.on('uraf_health', (data) => {
+        const el = document.getElementById('uraf-health-display');
+        if (el) el.textContent = JSON.stringify(data, null, 2);
+      });
+
+      socket.on('uraf_recovery', (data) => {
+        const el = document.getElementById('uraf-recovery-display');
+        if (el) el.textContent = JSON.stringify(data, null, 2);
+      });
+
+      socket.on('uraf_learning', (data) => {
+        const el = document.getElementById('uraf-learning-display');
+        if (el) el.textContent = JSON.stringify(data, null, 2);
+      });
+
+      socket.on('uraf_twin', (data) => {
+        const el = document.getElementById('uraf-twin-display');
+        if (el) el.textContent = JSON.stringify(data, null, 2);
+      });
     }
 
     function jog(x, y, z) {
@@ -1021,6 +888,12 @@
 
       isGuiInitialized = true;
       console.log("GUI Initialized");
+
+      if (typeof window.initRobotViewport === "function") {
+        window.initRobotViewport("robot-viewport").catch((e) =>
+          console.warn("3D viewport init:", e)
+        );
+      }
 
       updateStatusUI();
       openTab(null, "tab-control");
@@ -1248,12 +1121,40 @@
       if (reconnectBtn)
         reconnectBtn.style.display =
           isConnected || isSimMode ? "none" : "block";
+
+      const topConn = document.getElementById("topbar-connection");
+      const topConnText = document.getElementById("topbar-conn-text");
+      if (topConn && topConnText) {
+        if (isSimMode) {
+          topConn.className = "topbar-chip ok";
+          topConnText.textContent = "Simulation";
+        } else if (isConnected) {
+          topConn.className = "topbar-chip ok";
+          topConnText.textContent = "Connected";
+        } else {
+          topConn.className = "topbar-chip warn";
+          topConnText.textContent = "Offline";
+        }
+      }
+
       const estopStatus = document.getElementById("estop-status");
       const isEstopActive = data.emergency_stop_active === true;
       if (estopStatus) {
         estopStatus.textContent = isEstopActive ? "ACTIVE" : "INACTIVE";
         estopStatus.className =
           "status-box " + (isEstopActive ? "status-warn" : "status-ok");
+      }
+
+      const topEstop = document.getElementById("topbar-estop");
+      const topEstopText = document.getElementById("topbar-estop-text");
+      if (topEstop && topEstopText) {
+        if (isEstopActive) {
+          topEstop.className = "topbar-chip warn";
+          topEstopText.textContent = "E-Stop ACTIVE";
+        } else {
+          topEstop.className = "topbar-chip ok";
+          topEstopText.textContent = "E-Stop OK";
+        }
       }
 
       isPlayingSequence = data.is_playing === true;
@@ -1434,7 +1335,148 @@
         deletePosBtn.disabled = isControlDisabled || !selectionFound;
       }
     }
-  </script>
-</body>
+
+
+      // ================================================================
+      // JARVIS AI – JavaScript
+      // ================================================================
+
+      // ================================================================
+
+      // Send command to /api/jarvis_command
+      function sendJarvisCommand() {
+        const input = document.getElementById('jarvis-input');
+        const text  = input.value.trim();
+        if (!text) return;
+
+        jarvisAppendMsg('user', '🎙️ You: ' + text);
+        input.value = '';
+
+        fetch('/api/jarvis_command', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ command: text })
+        })
+        .then(r => r.json())
+        .then(d => {
+          if (!d.ok)
+            jarvisAppendMsg('error', '❌ Server error sending command.');
+        })
+        .catch(e => jarvisAppendMsg('error', '❌ Network error: ' + e));
+      }
+
+      function jarvisQuick(cmd) {
+        document.getElementById('jarvis-input').value = cmd;
+        sendJarvisCommand();
+      }
+
+      // Append a message bubble to the chat feed
+      function jarvisAppendMsg(type, text) {
+        const feed = document.getElementById('jarvis-chat');
+        const div  = document.createElement('div');
+        div.className = 'jarvis-msg jarvis-' + type;
+        div.textContent = text;
+        // colour mapping
+        const colors = {
+          user:   '#667eea',
+          jarvis: '#48bb78',
+          error:  '#fc8181',
+          warn:   '#f6ad55',
+          sys:    '#718096',
+        };
+        div.style.cssText =
+          `color:${colors[type] || '#ccc'};`+
+          `border-left:3px solid ${colors[type] || '#555'};`+
+          `padding-left:8px; font-size:0.9em;`;
+        feed.appendChild(div);
+        feed.scrollTop = feed.scrollHeight;
+      }
+
+      // LLM status dot colours
+      const LLM_STATUS_COLORS = {
+        'loading':  '#f6ad55',   // orange
+        'ready':    '#48bb78',   // green
+        'thinking': '#667eea',   // blue/purple
+        'error':    '#fc8181',   // red
+      };
+
+      function updateLlmStatus(status) {
+        const dot  = document.getElementById('llm-status-dot');
+        const text = document.getElementById('llm-status-text');
+        if (!dot || !text) return;
+        const color = LLM_STATUS_COLORS[status.split(':')[0]] || '#555';
+        dot.style.background = color;
+        text.textContent = 'LLM: ' + status;
+        if (status === 'thinking') {
+          dot.style.animation = 'pulse 0.8s infinite alternate';
+        } else {
+          dot.style.animation = '';
+        }
+      }
+
+      function runDiscovery() {
+        const log = document.getElementById('uraf-discovery-log');
+        if (log) log.innerHTML = '<div style="color:#00c2ff;">Scanning…</div>';
+        fetch('/api/uraf/discovery', { method: 'POST' })
+          .then(r => r.json())
+          .then(d => { if (!d.status || d.status !== 'ok') logMessage('warn', 'Discovery trigger failed'); })
+          .catch(e => logMessage('error', 'Discovery: ' + e));
+      }
+
+      function generateUrafUrdf() {
+        fetch('/api/uraf/generate_urdf', { method: 'POST' })
+          .then(r => r.json())
+          .then(d => logMessage(d.status === 'ok' ? 'info' : 'warn', d.message || 'URDF generation triggered'))
+          .catch(e => logMessage('error', 'URDF: ' + e));
+      }
+
+      function validateTwinMotion() {
+        fetch('/api/uraf/twin/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ x: 0.2, y: 0.2, z: 0.3 })
+        })
+          .then(r => r.json())
+          .then(d => logMessage('info', 'Twin validation sent: ' + (d.request_id || '')))
+          .catch(e => logMessage('error', 'Twin: ' + e));
+      }
+
+      function loadUrafConfig() {
+        fetch('/api/uraf/config')
+          .then(r => r.json())
+          .then(cfg => {
+            renderDiscovery(cfg);
+            logMessage('info', 'URAF config loaded.');
+          });
+      }
+
+      function renderDiscovery(data) {
+        const log = document.getElementById('wizard-discovery-log') || document.getElementById('uraf-discovery-log');
+        if (!log) return;
+        if (typeof data === 'string') {
+          try { data = JSON.parse(data); } catch (e) { log.textContent = data; return; }
+        }
+        const conf = data.confidence != null ? (data.confidence * 100).toFixed(0) + '%' : '—';
+        let html = `<div><b>Robot:</b> ${data.robot_name || data.robot?.name || 'Visiona'}</div>`;
+        html += `<div><b>Confidence:</b> ${conf}</div>`;
+        if (data.interfaces) {
+          html += '<div style="margin-top:8px;"><b>Interfaces:</b></div>';
+          data.interfaces.forEach(i => {
+            html += `<div>• ${i.type} ${i.device} (${i.protocol_guess || 'unknown'})</div>`;
+          });
+        }
+        if (data.ros2) {
+          html += `<div style="margin-top:8px;"><b>ROS2:</b> joints=${data.ros2.joint_states_topic || 'none'}, jarvis=${data.ros2.jarvis_active}</div>`;
+        }
+        log.innerHTML = html;
+      }
+
+      const pulseStyle = document.createElement('style');
+      pulseStyle.textContent =
+        '@keyframes pulse { from {opacity:1;} to {opacity:0.3;} }';
+      document.head.appendChild(pulseStyle);
+
+    </script>
+  </body>
 
 </html>

@@ -29,7 +29,7 @@ class MoveItHomer(Node):
         self.get_logger().info('Constructing Home Goal...')
         
         goal_msg = MoveGroup.Goal()
-        goal_msg.request.group_name = 'visiona_arm'
+        goal_msg.request.group_name = 'arm'
         goal_msg.request.max_velocity_scaling_factor = 0.5
         goal_msg.request.max_acceleration_scaling_factor = 0.5
         goal_msg.request.num_planning_attempts = 10

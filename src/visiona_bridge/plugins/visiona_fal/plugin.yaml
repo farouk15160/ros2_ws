@@ -1,0 +1,11 @@
+plugin_info:
+  name: "visiona_fal"
+  type: "fal_driver"
+  version: "1.0.0"
+  author: "Visiona Robotics"
+  description: "FAL driver for Visiona ESP32 serial protocol (v5)"
+  entry_point: "visiona_bridge.uraf.bundled_plugins.visiona_fal.driver:VisionaFALDriver"
+  detection:
+    method: "serial_baud"
+    baudrate: 921600
+    protocol: "visiona_packet_v5"
