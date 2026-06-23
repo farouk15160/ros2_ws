@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""URAF Digital Twin Agent  Phase 18 (PLAN.md 18)."""
+"""URAF Digital Twin Agent Â Phase 18 (PLAN.md Â18)."""
 
 from __future__ import annotations
 

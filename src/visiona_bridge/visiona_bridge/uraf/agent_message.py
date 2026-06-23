@@ -1,4 +1,4 @@
-"""URAF inter-agent message schema (PLAN.md ง6.2.2)."""
+"""URAF inter-agent message schema (PLAN.md ยง6.2.2)."""
 
 from __future__ import annotations
 

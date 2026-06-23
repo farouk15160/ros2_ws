@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""URAF Multi-Robot Coordinator — Phase 6 namespace and priority management."""
+"""URAF Multi-Robot Coordinator â€” Phase 6 namespace and priority management."""
 
 from __future__ import annotations
 

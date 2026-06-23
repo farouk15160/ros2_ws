@@ -1,4 +1,4 @@
-"""Community Robot Library  fingerprinting and profile lookup (PLAN.md 21)."""
+"""Community Robot Library Â fingerprinting and profile lookup (PLAN.md Â21)."""
 
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ def compute_robot_fingerprint(profile: dict[str, Any]) -> str:
 
 
 class CommunityLibrary:
-    """Curated robot profiles  bundled + user-installed."""
+    """Curated robot profiles Â bundled + user-installed."""
 
     AGENT_ID = "community_library_agent"
 

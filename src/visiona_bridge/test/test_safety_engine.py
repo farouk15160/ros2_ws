@@ -1,4 +1,4 @@
-"""Unit tests for URAF safety engine (PLAN.md ง19, ง23)."""
+"""Unit tests for URAF safety engine (PLAN.md ยง19, ยง23)."""
 
 import math
 

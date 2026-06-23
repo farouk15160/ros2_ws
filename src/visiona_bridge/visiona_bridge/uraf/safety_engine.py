@@ -1,4 +1,4 @@
-"""URAF Safety Engine — PLAN.md §19 (SIL 2-oriented software safety layer)."""
+"""URAF Safety Engine â€” PLAN.md Â§19 (SIL 2-oriented software safety layer)."""
 
 from __future__ import annotations
 
@@ -83,7 +83,7 @@ class SafetyEngine:
 
         if not serial_ok and self.state.armed:
             violations.append(SafetyViolation(
-                SafetyFunction.SF07_WATCHDOG, "Serial watchdog — MCU disconnected", "critical"))
+                SafetyFunction.SF07_WATCHDOG, "Serial watchdog â€” MCU disconnected", "critical"))
 
         if joint_age_sec is not None and joint_age_sec > self.watchdog_sec:
             violations.append(SafetyViolation(
@@ -105,7 +105,7 @@ class SafetyEngine:
                 if val < lo - 0.01 or val > hi + 0.01:
                     violations.append(SafetyViolation(
                         SafetyFunction.SF01_JOINT_LIMIT,
-                        f"Joint {i} limit violation ({math.degrees(val):.1f}°)",
+                        f"Joint {i} limit violation ({math.degrees(val):.1f}Â°)",
                         "critical",
                     ))
 

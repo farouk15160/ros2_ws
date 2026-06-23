@@ -1,4 +1,4 @@
-"""Dynamic URAF plugin loader (PLAN.md ง20.2)."""
+"""Dynamic URAF plugin loader (PLAN.md ยง20.2)."""
 
 from __future__ import annotations
 

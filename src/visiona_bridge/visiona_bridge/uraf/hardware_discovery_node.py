@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""URAF Hardware Discovery Agent  Phase 1 (Visiona-focused)."""
+"""URAF Hardware Discovery Agent Â Phase 1 (Visiona-focused)."""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ class HardwareDiscoveryNode(Node):
         self.bus.emit_result(self.AGENT_ID, "hardware_profile", profile, profile.get("confidence", 0.0))
 
     def discover(self) -> dict:
-        self.get_logger().info("Starting hardware discovery")
+        self.get_logger().info("Starting hardware discoveryÂ")
         interfaces = self._scan_serial_ports()
         ros2 = self._scan_ros2_ecosystem()
         config = self.store.load()
@@ -63,7 +63,7 @@ class HardwareDiscoveryNode(Node):
             "known_robot_family": "visiona_v1",
             "community_profile_match": {"found": True, "profile_id": "visiona_v1", "match_confidence": 0.95},
         }
-        self.get_logger().info(f"Discovery complete  confidence {confidence:.0%}")
+        self.get_logger().info(f"Discovery complete Â confidence {confidence:.0%}")
         return profile
 
     def _scan_serial_ports(self) -> list:

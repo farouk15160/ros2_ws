@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""URAF Self-Healing Agent ù Phase 6 (enhanced health monitor + auto-recovery)."""
+"""URAF Self-Healing Agent ¬ù Phase 6 (enhanced health monitor + auto-recovery)."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Phase 6 — Self-healing detection and recovery logic (PLAN.md §12.1)."""
+"""Phase 6 â€” Self-healing detection and recovery logic (PLAN.md Â§12.1)."""
 
 from __future__ import annotations
 

@@ -1,5 +1,5 @@
-# URAF Master Configuration  Visiona Robotics Studio v1.0
-# Aligned with PLAN.md 6.2.3. Edit here or use the Setup Wizard in the web GUI.
+# URAF Master Configuration Â Visiona Robotics Studio v1.0
+# Aligned with PLAN.md Â6.2.3. Edit here or use the Setup Wizard in the web GUI.
 
 uraf:
   version: "1.0"

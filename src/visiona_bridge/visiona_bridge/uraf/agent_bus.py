@@ -1,4 +1,4 @@
-"""URAF Agent Orchestration Bus — ROS 2 pub/sub transport (Phase 0)."""
+"""URAF Agent Orchestration Bus â€” ROS 2 pub/sub transport (Phase 0)."""
 
 from __future__ import annotations
 

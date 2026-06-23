@@ -1,4 +1,4 @@
-"""GUI Setup Wizard state persistence (PLAN.md ง17)."""
+"""GUI Setup Wizard state persistence (PLAN.md ยง17)."""
 
 from __future__ import annotations
 

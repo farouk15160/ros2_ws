@@ -26,15 +26,15 @@ def main(args=None):
     
     # Initialize ROS Node
     ros_node = RobotArmBridge()
-    
-    # Start ROS spin thread
-    ros_thread = threading.Thread(target=rclpy.spin, args=(ros_node,), daemon=True)
-    ros_thread.start()
-    
-    # Create Flask app if GUI enabled
+
+    # Attach Flask/SocketIO before spinning so callbacks can emit safely
     app = None
     if use_gui:
         app, _ = create_app(ros_node)
+
+    # Start ROS spin thread after GUI wiring is ready
+    ros_thread = threading.Thread(target=rclpy.spin, args=(ros_node,), daemon=True)
+    ros_thread.start()
     
     # Graceful shutdown handler
     def signal_handler(sig, frame):

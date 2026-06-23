@@ -1,4 +1,4 @@
-"""Reference FAL driver plugin for Visiona ESP32 (PLAN.md §20 example)."""
+"""Reference FAL driver plugin for Visiona ESP32 (PLAN.md Â§20 example)."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from ...plugin_base import FALDriverPlugin
 
 
 class VisionaFALDriver(FALDriverPlugin):
-    """Stub FAL driver — production path uses bridge serial protocol."""
+    """Stub FAL driver â€” production path uses bridge serial protocol."""
 
     def __init__(self):
         self._connected = False

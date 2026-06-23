@@ -5,6 +5,21 @@ Handles emitting robot state updates and log messages to connected clients.
 """
 
 
+def _socketio_ready(socketio) -> bool:
+    """True only after socketio.run() has started the Engine.IO server."""
+    return bool(socketio and getattr(socketio, "server", None) is not None)
+
+
+def safe_emit(socketio, event, data):
+    """Emit to GUI clients; no-op before the Flask-SocketIO server is running."""
+    if not _socketio_ready(socketio):
+        return
+    try:
+        socketio.emit(event, data)
+    except (AttributeError, RuntimeError):
+        pass
+
+
 def emit_status(socketio, state_dict, sequence_data=None, position_names=None):
     """
     Emit robot status to all connected GUI clients.
@@ -15,9 +30,9 @@ def emit_status(socketio, state_dict, sequence_data=None, position_names=None):
         sequence_data: List of sequence points (optional)
         position_names: List of saved position names (optional)
     """
-    if not socketio:
+    if not _socketio_ready(socketio):
         return
-    
+
     try:
         status_data = {
             "is_connected": state_dict.get('is_connected', False),
@@ -42,10 +57,8 @@ def emit_status(socketio, state_dict, sequence_data=None, position_names=None):
         if position_names is not None:
             status_data["saved_positions"] = position_names
         
-        socketio.emit('status_update', status_data)
-        
-    except Exception as e:
-        # Avoid logging errors here to prevent circular dependencies
+        safe_emit(socketio, 'status_update', status_data)
+    except Exception:
         pass
 
 
@@ -58,8 +71,7 @@ def emit_log_message(socketio, level: str, message: str):
         level: Log level ('info', 'warn', 'error', 'success')
         message: Log message text
     """
-    if socketio:
-        socketio.emit('log_message', {'level': level, 'message': message})
+    safe_emit(socketio, 'log_message', {'level': level, 'message': message})
 
 
 def emit_cartesian_pose(socketio, x: float, y: float, z: float):
@@ -70,30 +82,24 @@ def emit_cartesian_pose(socketio, x: float, y: float, z: float):
         socketio: SocketIO instance
         x, y, z: Cartesian coordinates
     """
-    if socketio:
-        pose_data = {
-            'x': round(x, 3),
-            'y': round(y, 3),
-            'z': round(z, 3)
-        }
-        socketio.emit('cartesian_pose', pose_data)
+    safe_emit(socketio, 'cartesian_pose', {
+        'x': round(x, 3),
+        'y': round(y, 3),
+        'z': round(z, 3),
+    })
 
 
 def emit_jarvis_feedback(socketio, message: str):
-    if socketio:
-        socketio.emit('jarvis_feedback', {'message': message})
+    safe_emit(socketio, 'jarvis_feedback', {'message': message})
 
 
 def emit_jarvis_world_state(socketio, state_json: str):
-    if socketio:
-        socketio.emit('jarvis_world_state', state_json)
+    safe_emit(socketio, 'jarvis_world_state', state_json)
 
 
 def emit_jarvis_action_plan(socketio, plan_json: str):
-    if socketio:
-        socketio.emit('jarvis_action_plan', plan_json)
+    safe_emit(socketio, 'jarvis_action_plan', plan_json)
 
 
 def emit_llm_status(socketio, status: str):
-    if socketio:
-        socketio.emit('llm_status', {'status': status})
+    safe_emit(socketio, 'llm_status', {'status': status})

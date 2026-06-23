@@ -1,4 +1,4 @@
-"""Hybrid motion planner  Simple IK + MoveIt 2 (PLAN Phase 3)."""
+"""Hybrid motion planner Â Simple IK + MoveIt 2 (PLAN Phase 3)."""
 
 from __future__ import annotations
 
@@ -84,7 +84,7 @@ class HybridMotionPlanner:
             ok = self._moveit_move(x, y, z, timeout)
             if ok:
                 return True
-            self._node.get_logger().warn("MoveIt failed  falling back to Simple IK")
+            self._node.get_logger().warn("MoveIt failed Â falling back to Simple IK")
         return self._simple_ik_move(x, y, z, timeout)
 
     def move_home(self, timeout: float | None = None) -> bool:

@@ -1,4 +1,4 @@
-"""URAF plugin base interfaces (PLAN.md ง20)."""
+"""URAF plugin base interfaces (PLAN.md ยง20)."""
 
 from __future__ import annotations
 

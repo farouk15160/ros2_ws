@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Digital Twin launch — twin agent + optional RViz."""
+"""Digital Twin launch â€” twin agent + optional RViz."""
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, LogInfo

@@ -27,7 +27,7 @@ class RobotPublishers:
         self.deg_to_rad = deg_to_rad_fn
         
         # Create publishers
-        sensor_qos = QoSProfile(depth=10, reliability=QoSReliabilityPolicy.BEST_EFFORT)
+        sensor_qos = QoSProfile(depth=10, reliability=QoSReliabilityPolicy.RELIABLE)
         
         self.joint_state_pub = node.create_publisher(JointState, 'joint_states', qos_profile=sensor_qos)
         self.gazebo_traj_pub = node.create_publisher(

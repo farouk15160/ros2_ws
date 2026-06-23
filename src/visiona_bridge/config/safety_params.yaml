@@ -1,4 +1,4 @@
-# URAF Safety Architecture — PLAN.md §19.2
+# URAF Safety Architecture â€” PLAN.md Â§19.2
 safety_params:
   ros__parameters:
     joint_limits_deg:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""URAF Learning Agent — Phase 6 execution recording and grasp models."""
+"""URAF Learning Agent â€” Phase 6 execution recording and grasp models."""
 
 from __future__ import annotations
 

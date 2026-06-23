@@ -1,4 +1,4 @@
-"""Phase 6  Multi-robot coordination helpers (PLAN.md 12.3)."""
+"""Phase 6 Â Multi-robot coordination helpers (PLAN.md Â12.3)."""
 
 from __future__ import annotations
 

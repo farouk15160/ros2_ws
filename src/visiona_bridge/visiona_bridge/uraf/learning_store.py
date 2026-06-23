@@ -1,4 +1,4 @@
-"""Phase 6 — Learning data persistence (PLAN.md §12.2)."""
+"""Phase 6 â€” Learning data persistence (PLAN.md Â§12.2)."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Digital Twin subsystem — motion validation and state mirror (PLAN.md §18)."""
+"""Digital Twin subsystem â€” motion validation and state mirror (PLAN.md Â§18)."""
 
 from __future__ import annotations
 

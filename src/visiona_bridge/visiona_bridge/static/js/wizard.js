@@ -1,5 +1,5 @@
 /**
- * URAF Setup Wizard — PLAN.md §17 multi-step flow
+ * URAF Setup Wizard â€” PLAN.md Â§17 multi-step flow
  */
 (function () {
   const STEPS = [
@@ -35,7 +35,7 @@
     const prog = el('wizard-progress-bar');
     if (prog) prog.style.width = ((stepIdx + 1) / STEPS.length * 100) + '%';
     const title = el('wizard-step-title');
-    if (title) title.textContent = STEPS[stepIdx].title + ' — ' + STEPS[stepIdx].desc;
+    if (title) title.textContent = STEPS[stepIdx].title + ' â€” ' + STEPS[stepIdx].desc;
     renderStepNav();
   }
 
@@ -103,7 +103,7 @@
 
   function runAutoSetup() {
     const log = el('wizard-discovery-log');
-    if (log) log.innerHTML = '<div style="color:#00c2ff;">Auto setup running…</div>';
+    if (log) log.innerHTML = '<div style="color:#00c2ff;">Auto setup runningâ€¦</div>';
     fetch('/api/uraf/discovery', { method: 'POST' })
       .then(() => fetch('/api/uraf/community/lookup', {
         method: 'POST',

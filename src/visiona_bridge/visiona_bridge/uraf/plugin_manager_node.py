@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""URAF Plugin Manager — PLAN.md §20."""
+"""URAF Plugin Manager â€” PLAN.md Â§20."""
 
 from __future__ import annotations
 

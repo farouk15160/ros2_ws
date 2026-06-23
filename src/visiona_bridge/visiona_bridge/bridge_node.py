@@ -28,7 +28,7 @@ from .ros2_interface.services import RobotServices
 from .ros2_interface.cartesian_interface import CartesianInterface
 
 # GUI layer
-from .gui.socketio_handlers import emit_status, emit_log_message, emit_cartesian_pose
+from .gui.socketio_handlers import emit_status, emit_log_message, emit_cartesian_pose, safe_emit
 
 # Constants
 from .bridge_constants import STATUS_TIMEOUT_SEC
@@ -159,16 +159,14 @@ class RobotArmBridge(Node):
                 self._uraf_health = json.loads(msg.data)
             except (json.JSONDecodeError, TypeError):
                 self._uraf_health = {"status": "unknown", "raw": msg.data}
-            if self.socketio:
-                self.socketio.emit("uraf_health", self._uraf_health)
+            safe_emit(self.socketio, "uraf_health", self._uraf_health)
 
         def on_profile(msg: String):
             try:
                 self._uraf_hardware_profile = json.loads(msg.data)
             except (json.JSONDecodeError, TypeError):
                 self._uraf_hardware_profile = {}
-            if self.socketio:
-                self.socketio.emit("uraf_discovery", self._uraf_hardware_profile)
+            safe_emit(self.socketio, "uraf_discovery", self._uraf_hardware_profile)
 
         self.create_subscription(String, "/uraf/health", on_health, 10)
         self.create_subscription(String, "/uraf/hardware_profile", on_profile, 10)
@@ -194,56 +192,49 @@ class RobotArmBridge(Node):
             self._uraf_recovery = json.loads(msg.data)
         except (json.JSONDecodeError, TypeError):
             self._uraf_recovery = {}
-        if self.socketio:
-            self.socketio.emit("uraf_recovery", self._uraf_recovery)
+        safe_emit(self.socketio, "uraf_recovery", self._uraf_recovery)
 
     def _on_learning(self, msg: String):
         try:
             self._uraf_learning = json.loads(msg.data)
         except (json.JSONDecodeError, TypeError):
             self._uraf_learning = {}
-        if self.socketio:
-            self.socketio.emit("uraf_learning", self._uraf_learning)
+        safe_emit(self.socketio, "uraf_learning", self._uraf_learning)
 
     def _on_twin_state(self, msg: String):
         try:
             self._uraf_twin = json.loads(msg.data)
         except (json.JSONDecodeError, TypeError):
             self._uraf_twin = {}
-        if self.socketio:
-            self.socketio.emit("uraf_twin", self._uraf_twin)
+        safe_emit(self.socketio, "uraf_twin", self._uraf_twin)
 
     def _on_plugins(self, msg: String):
         try:
             self._uraf_plugins = json.loads(msg.data)
         except (json.JSONDecodeError, TypeError):
             self._uraf_plugins = {}
-        if self.socketio:
-            self.socketio.emit("uraf_plugins", self._uraf_plugins)
+        safe_emit(self.socketio, "uraf_plugins", self._uraf_plugins)
 
     def _on_community(self, msg: String):
         try:
             self._uraf_community = json.loads(msg.data)
         except (json.JSONDecodeError, TypeError):
             self._uraf_community = {}
-        if self.socketio:
-            self.socketio.emit("uraf_community", self._uraf_community)
+        safe_emit(self.socketio, "uraf_community", self._uraf_community)
 
     def _on_community_match(self, msg: String):
         try:
             data = json.loads(msg.data)
         except (json.JSONDecodeError, TypeError):
             data = {}
-        if self.socketio:
-            self.socketio.emit("uraf_community_match", data)
+        safe_emit(self.socketio, "uraf_community_match", data)
 
     def _on_safety(self, msg: String):
         try:
             self._uraf_safety = json.loads(msg.data)
         except (json.JSONDecodeError, TypeError):
             self._uraf_safety = {}
-        if self.socketio:
-            self.socketio.emit("uraf_safety", self._uraf_safety)
+        safe_emit(self.socketio, "uraf_safety", self._uraf_safety)
 
     def _on_safety_estop(self, msg: String):
         if msg.data.strip().lower() == "trigger":

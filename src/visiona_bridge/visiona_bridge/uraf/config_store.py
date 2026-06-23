@@ -1,4 +1,4 @@
-"""Versioned URAF configuration store (PLAN.md ง5.2, local-first)."""
+"""Versioned URAF configuration store (PLAN.md ยง5.2, local-first)."""
 
 from __future__ import annotations
 

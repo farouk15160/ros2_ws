@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""URAF URDF Generator Node — Phase 2."""
+"""URAF URDF Generator Node â€” Phase 2."""
 
 from __future__ import annotations
 

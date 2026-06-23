@@ -1,4 +1,4 @@
-"""Unit tests for URAF wizard store and community library (PLAN.md 17, 21)."""
+"""Unit tests for URAF wizard store and community library (PLAN.md Â17, Â21)."""
 
 import tempfile
 from pathlib import Path

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""URAF Safety Monitor — PLAN.md ง19 safe startup + safety functions."""
+"""URAF Safety Monitor โ€” PLAN.md ยง19 safe startup + safety functions."""
 
 from __future__ import annotations
 
@@ -59,7 +59,7 @@ class SafetyMonitorNode(Node):
         self.create_timer(1.0 / rate, self._tick)
         if self.get_parameter("startup_auto").value:
             self.create_timer(1.5, self._startup_tick)
-        self.get_logger().info("[URAF] Safety Monitor active (ง19)")
+        self.get_logger().info("[URAF] Safety Monitor active (ยง19)")
 
     def _load_params(self) -> dict:
         try:

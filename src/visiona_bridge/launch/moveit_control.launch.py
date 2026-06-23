@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MoveIt 2 stack for Visiona — move_group + optional RViz."""
+"""MoveIt 2 stack for Visiona â€” move_group + optional RViz."""
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, LogInfo

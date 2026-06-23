@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""URAF Community Robot Library agent — PLAN.md §21."""
+"""URAF Community Robot Library agent â€” PLAN.md Â§21."""
 
 from __future__ import annotations
 

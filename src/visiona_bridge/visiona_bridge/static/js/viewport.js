@@ -1,5 +1,5 @@
 /**
- * Visiona Robotics Studio — 3D DH arm viewport (Three.js)
+ * Visiona Robotics Studio â€” 3D DH arm viewport (Three.js)
  */
 (function () {
   const JOINT_COLORS = [0x00c2ff, 0x00ffae, 0x7a5fff, 0xffa63e, 0xff4e63, 0x8a96a3];

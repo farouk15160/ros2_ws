@@ -1,4 +1,4 @@
-/* Visiona Robotics Studio ù DESIGN.md theme */
+/* Visiona Robotics Studio ¬ù DESIGN.md theme */
 
 :root {
   --bg: #0b0d10;
@@ -534,7 +534,7 @@ input[type="range"] {
   to { opacity: 1; }
 }
 
-/* Viewport placeholder (3D workspace ù future Three.js) */
+/* Viewport placeholder (3D workspace ¬ù future Three.js) */
 #robot-viewport {
   width: 100%;
   min-height: 280px;
@@ -561,7 +561,7 @@ input[type="range"] {
   color: var(--text-secondary);
 }
 
-/* URAF Setup Wizard ù PLAN ù17 */
+/* URAF Setup Wizard ¬ù PLAN ¬ù17 */
 .wizard-container {
   max-width: 960px;
   margin: 0 auto;
